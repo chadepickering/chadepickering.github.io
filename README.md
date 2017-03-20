@@ -3,7 +3,7 @@ Welcome! Below you will find my recent completed projects for my undergraduate s
 ### Undergraduate Projects 
 
 #### STA 141B: Web Technologies for Data Analysis
-- [Assignment 1: Doomsday Algorithm](url)
+- [Assignment 1: Doomsday Algorithm](https://github.com/chadepickering/chadepickering.github.io/blob/master/Portfolio/assignment1.html)
 - [Assignment 2: Image Processing & SVD](url)
 - [Assignment 3: Excel I/O, Data Manipulation, & Plotting](url)
 - [Assignment 4: Handling APIs & Model Construction](url)
@@ -11,6 +11,6 @@ Welcome! Below you will find my recent completed projects for my undergraduate s
 - [Assignment 6: SQL & Mapping](url)
 - [Final Project: Examining El Nino, Precipitation, & Temperature Related Events from Multiple NOAA Databases](url)
 
-![Image](src)
+#### Other classes coming soon!
 
 
