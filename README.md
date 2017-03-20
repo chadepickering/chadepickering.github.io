@@ -9,7 +9,7 @@ Welcome! Below you will find my recent completed projects for my undergraduate s
 - [Assignment 4: Handling APIs & Model Construction](Portfolio/assignment4.html)
 - [Assignment 5: Web Scraping & Natural Language Processing](Portfolio/assignment5.html)
 - [Assignment 6: SQL & Mapping](Portfolio/assignment6.html)
-- [Final Project: Examining El Nino, Precipitation, & Temperature Related Events from Multiple NOAA Databases](Portfolio/finalproject.html)
+- [Final Project: Does El Nino Affect Precipitation Totals and Temperature Fluctuations in the U.S.?](Portfolio/finalproject.html)
 
 #### Other classes coming soon!
 
