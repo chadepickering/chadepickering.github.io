@@ -35,13 +35,13 @@ Among the Filipino American Immigrant Community](Grad/BIOS200C/200C_proj1.pdf)
 with Breast Cancer Awareness and Insurance Status](Grad/BIOS200C/200C_proj2.pdf)
 
 #### BIOS 203B: Statistical Computing (Winter 2018)
-- [Project 1: ](Grad/BIOS203B/hw1/hw1_solns.html)
-- [Project 2: ](Grad/BIOS203B/hw2/hw2_solns.html)
-- [Project 2, Question 3: ](Grad/BIOS203B/hw2/hw2_q3.html)
+- [Project 1: Analysis of Genetic Data with Linux](Grad/BIOS203B/hw1/hw1_solns.html)
+- [Project 2: Analysis of Diamond Data](Grad/BIOS203B/hw2/hw2_solns.html)
+- [Project 2, Question 3: Analysis of Diamond Data, Part 2](Grad/BIOS203B/hw2/hw2_q3.html)
 - [Project 3: Los Angeles City Employee Payroll (Shiny App)](https://cepickering.shinyapps.io/LA_City_Employee_Payroll/)
-- [Project 3, Question 2: ](Grad/BIOS203B/hw3/hw3_q2.html)
-- [Project 4: ](Grad/BIOS203B/hw4/hw4.html)
-- [Project 4, Question 4: ](Grad/BIOS203B/hw4/hw4_ex4.html)
+- [Project 3, Question 2: Analysis of Parking Tickets in LA using SQLite](Grad/BIOS203B/hw3/hw3_q2.html)
+- [Project 4: Analysis of Air Traffic at LAX](Grad/BIOS203B/hw4/hw4.html)
+- [Project 4, Question 4: Development of Predictive Model for Arrival Delay](Grad/BIOS203B/hw4/hw4_ex4.html)
 
 #### BIOS 200B: Methods in Biostatistics II (Winter 2018)
 - [Association Between Elevation in Hospital Bed Occupancy Rates 
@@ -49,7 +49,8 @@ and Risk of Acquiring Infection](Grad/BIOS200B/200B_proj1.pdf)
 - [Variable Selection and Model Development to Predict 
 Serious Crimes per Capita in U.S. Cities](Grad/BIOS200B/200B_proj2.pdf)
 
-<break>
+<br/>
+<br/>
 
 ### Undergraduate Projects (Selection)
 
