@@ -1,7 +1,6 @@
 Welcome! 
 
-I'm Chad Pickering, a soon-to-be graduate student in the Biostatistics Department at UCLA. I am very interested in Bayesian methods, model construction, time series analysis, and bioinformatics. 
-I have had several classes that have had data science or large-scale project components; below is a small sampling. Any questions should be fielded to cepickering@ucdavis.edu!
+I'm Chad Pickering, a biostatistics graduate student at UCLA. 
 
 Under construction, but all current links work!
 
