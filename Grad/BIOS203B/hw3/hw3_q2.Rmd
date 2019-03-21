@@ -1,0 +1,261 @@
+---
+title: 'BIOSTAT 203B: Homework 3'
+author: "Chad Pickering"
+date: "3/2/2018"
+output: html_document
+---
+
+## Question 2. 
+
+First, connect to the database, which only contains one table, called `latix`.
+
+```{r, warning=FALSE, message=FALSE}
+library(DBI)
+library(RSQLite)
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+
+park <- dbConnect(RSQLite::SQLite(), 
+                 "/home/m280-data/la_parking/LA_Parking_Citations.sqlite")
+
+la_tix <- dplyr::tbl(park, "latix")
+```
+
+### 1. How many tickets are in this data set? Which time period do these tickets span? Which years have most data?
+
+There are **4044338 distinct ticket numbers** in the dataset (and **4044488** rows, perhaps 150 tickets did not have reported numbers).  
+
+```{r}
+la_tix %>%
+  summarize("Num Tickets" = n_distinct(Ticket_number)) %>%
+  collect()
+```
+
+The earliest recorded ticket in the dataset was given on **April 27, 2010**. The latest recorded ticket in the dataset was given on **December 29, 2017**.  
+
+```{r, warning=FALSE, message=FALSE}
+la_tix %>%
+  select(Issue_DateTime) %>%
+  summarise(min_date = datetime(min(Issue_DateTime), 
+                                'unixepoch', 'localtime'), 
+            max_date = datetime(max(Issue_DateTime), 
+                                'unixepoch', 'localtime')) %>%
+  collect()
+```
+
+The most tickets in the dataset were given in **2015**, closely followed by **2016**.  
+
+```{r, warning=FALSE, message=FALSE}
+la_tix %>%
+  mutate(Issue_DateTime = datetime(Issue_DateTime, 
+                                   'unixepoch', 'localtime')) %>%
+  mutate(year = strftime('%Y', Issue_DateTime)) %>%
+  group_by(year) %>%
+  summarize("Count" = n()) %>%
+  collect()
+```
+
+
+### 2. When (which hour, weekday, month day, and month) are you most likely to get a ticket and when are you least likely to get a ticket?
+
+```{r}
+park_dates <- dbConnect(RSQLite::SQLite(), 
+                 "/home/m280-data/la_parking/LA_Parking_Citations_Extra.sqlite")
+
+la_tix2 <- dplyr::tbl(park_dates, "latix")
+```
+
+We create relevant variables for each plot. For the first, let's zoom in on where most of the data is and see if we can see a pattern. Zooming in on November 2014 to November 2016, we can see that there is a weekly seasonality component that is relatively constant throughout the year. It seems as if this database only contains complete records for January 2015 through a portion of October 2016.  
+
+In terms of month, we only have one full year of complete data (2015), so we can only safely analyze one year. Analyzing 2015 and 2016 would mean that October 2016 (incomplete data) and November and December 2016 (very sparse data) would influence the plot and interpretation. Overall, it looks like about 170000-190000 tickets are given per month, with some natural variability; perhaps tickets are given a little bit more often in the summer months relative to the winter months.  
+
+```{r}
+la_tix2 %>% 
+  select(Issue_Year, Issue_Month) %>%
+  filter(Issue_Year == 2015) %>%
+  group_by(Issue_Month) %>%
+  count %>%
+  collect() %>%
+  ggplot() + 
+    geom_col(aes(x = Issue_Month, y = n)) +
+    labs(title = "Frequency of Parking Tickets Given per Month in LA (2015)",
+       x = "Month",
+       y = "Frequency")
+```
+
+It looks like between 8am and 1pm is the most popular time for parking tickets to be given. Late evening and early morning hours are rather infrequent times for ticketing activities on the whole. I noticed that only 23 bars are plotted instead of 24; the plot suggests that the 0 hour data is missing.  
+
+```{r, warning=FALSE, message=FALSE}
+la_tix2 %>% 
+  select(Issue_Hour) %>%
+  group_by(Issue_Hour) %>%
+  count %>%
+  collect() %>%
+  ggplot() + 
+    geom_col(aes(x = Issue_Hour, y = n)) +
+    labs(title = "Frequency of Parking Tickets Given per Hour in LA",
+       x = "Hour",
+       y = "Frequency")
+```
+
+**Tuesdays** appear to be the most popular day to get ticketed, Saturdays being the least common. Weekends have markedly less citings; compared to the other weekdays, Mondays and Fridays appear to have less tickets given than mid-week days.  
+
+```{r, warning=FALSE, message=FALSE}
+la_tix2 %>% 
+  select(Issue_Wday) %>%
+  group_by(Issue_Wday) %>%
+  count %>%
+  collect() %>%
+  ggplot() + 
+    geom_col(aes(x = Issue_Wday, y = n)) +
+    labs(title = "Frequency of Parking Tickets Given per Day of Week in LA",
+       x = "Day",
+       y = "Frequency")
+```
+
+In terms of days in the month, it seems as if tickets are most commonly given in the middle third of the month, but the trend is very slight; it is essentially evenly dispersed with natural variation.  
+
+```{r}
+la_tix2 %>% 
+  select(Issue_Day, Issue_Year, Issue_Month) %>%
+  filter((Issue_Year == 2015) | (Issue_Year == 2016 & Issue_Month < 10)) %>%
+  group_by(Issue_Day) %>%
+  count %>%
+  collect() %>%
+  ggplot() + 
+    geom_col(aes(x = Issue_Day, y = n)) +
+    labs(title = "Frequency of Parking Tickets Given per Day of Month in LA",
+       x = "Day",
+       y = "Frequency")
+```
+
+### 3. Which car makes received most citations?  
+
+**Toyota** received the most citations, Honda and Ford rounding out the top 3 most cited makes. However, there are duplicate entries within the column "Make" - for example, TOYO and TOYT both represent Toyota, etc. These need to be combined with fuzzy string matching.  
+
+```{r}
+la_tix %>%
+  select(Make) %>%
+  group_by(Make) %>%
+  summarize("n" = n()) %>%
+  arrange(desc(n)) %>%
+  filter(n >= 100000) %>%
+  collect() %>%
+  ggplot() + 
+    geom_col(aes(x = Make, y = n)) +
+    labs(title = "Frequency of Top 11 Ticketed Car Makes in LA",
+         subtitle = "Most Common Abbreviations Taken",
+         x = "Make",
+         y = "Frequency")
+```
+
+### 4. How many different colors of cars were ticketed? Which color attracted most tickets?
+
+There appears to be **65** different colors of car reported; however, some appear to be duplicates, or not colors at all, at least not common ones. **Black** attracted the most tickets (862283), followed by white, grey, and silver.  
+
+```{r}
+la_tix %>%
+  select(Color) %>%
+  summarise("Number of Colors" = n_distinct(Color)) %>%
+  collect()
+```
+
+```{r}
+la_tix %>%
+  select(Color) %>%
+  group_by(Color) %>%
+  summarize("n" = n()) %>%
+  arrange(desc(n)) %>%
+  filter(n >= 100000) %>%
+  collect() %>%
+  ggplot() + 
+    geom_col(aes(x = Color, y = n)) +
+    labs(title = "Frequency of Top 7 Ticketed Car Colors in LA",
+       x = "Color",
+       y = "Frequency")
+```
+
+### 5. What are the most common ticket types?
+
+The most common violations are **"No Parking/Street Cleaning"** (1149021), "Meter Expiration", "Preferential Parking", and "Parking in the Red Zone". There are several duplicate categories throughout the 500, as well as codes preserved with no descriptions.  
+
+```{r}
+la_tix %>%
+  select(Violation_Description) %>%
+  group_by(Violation_Description) %>%
+  summarize("n" = n()) %>%
+  arrange(desc(n)) %>%
+  filter(n >= 200000) %>%
+  collect() %>%
+  ggplot() + 
+    geom_col(aes(x = Violation_Description, y = n)) +
+    labs(title = "Frequency of Top 5 Car Ticketing Violations in LA",
+       x = "Violation",
+       y = "Frequency") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### 6. How much money was collected on parking tickets in 2015 and 2016?
+
+The total revenue made from citation records that are not NA from 2015 is **$151,006,794**, and from 2016 is **$123,236,136**. This totals **$274,242,930**.
+
+```{r}
+la_tix2 %>%
+  select(Issue_Year, Fine_amount) %>%
+  filter(Issue_Year %in% c("2015", "2016")) %>%
+  group_by(Issue_Year) %>%
+  summarize("sum_tickets" = sum(Fine_amount, na.rm = TRUE)) %>%
+  collect()
+```
+
+### 7. Visualize any other information you are interested in.
+
+I was interested in a few things:
+
+Do out of state offenders tend to pay more in fines on average than in state residents?  
+
+Is there a difference in the offenses between the two groups (restricted to the top 5 most common)?   
+
+Vehicles with non-California plates tend to pay about $3 more on average - this is not too much of a difference. 
+
+```{r}
+la_tix2 %>%
+  select(RP_State_Plate, Violation_Description, Fine_amount) %>%
+  mutate(CA_plate = ifelse(RP_State_Plate %in% c("CA"), "CA", "Not_CA")) %>%
+  group_by(CA_plate) %>%
+  summarize("mean_fine" = mean(Fine_amount, na.rm = TRUE)) %>%
+  arrange(desc(mean_fine)) %>%
+  collect()
+```
+
+Vehicles with non-CA registration had almost no "Display of Tabs" altercations, as expected, compared to CA residents. Non-CA cars had slightly less tickets for parking in a red zone, but substantially more for parking in a No Parking zone or in preferential parking erroneously.  
+
+```{r}
+la_tix2 %>%
+  select(RP_State_Plate, Violation_Description) %>%
+  filter(Violation_Description %in% c("NO PARK/STREET CLEAN",
+                                      "METER EXP.",
+                                      "PREFERENTIAL PARKING",
+                                      "RED ZONE",
+                                      "DISPLAY OF TABS")) %>%
+  mutate(CA_plate = ifelse(RP_State_Plate %in% c("CA"), "CA", "Not_CA")) %>%
+  filter(!is.na(CA_plate)) %>%
+  collect() %>%
+  ggplot(aes(Violation_Description, group = CA_plate)) + 
+          geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") + 
+          scale_y_continuous(labels=scales::percent) +
+          facet_grid(~CA_plate) +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+          labs(title = "Rel. Frequencies of Top 5 Ticketing Violations 
+               for CA and Non-CA Residents in LA",
+            x = "Violation",
+            y = "Rel. Frequency")
+
+  
+```
+
+```{r}
+dbDisconnect(park)
+dbDisconnect(park_dates)
+```

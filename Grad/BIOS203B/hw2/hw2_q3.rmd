@@ -1,0 +1,100 @@
+---
+title: 'BIOSTAT 203B: HW2 #3'
+author: "Chad Pickering"
+date: "2/16/2018"
+output: html_document
+---
+
+## Q3  
+
+### Question 1.  
+
+Redo HW1 Q2 using functions in tidyverse:  
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+if (!"gridExtra" %in% rownames(installed.packages())){
+  install.packages("gridExtra", repos="http://cran.rstudio.com/")
+}
+
+library(readr)
+library(tidyverse)
+```
+
+```{r, warning=FALSE, message=FALSE}
+bim <- read_tsv("/home/m280-data/hw1/merge-geno.bim", col_names = FALSE)
+bim_tibble <- as_tibble(bim)
+fam <- read_delim("/home/m280-data/hw1/merge-geno.fam", 
+                  col_names = FALSE, delim = " ")
+fam_tibble <- as_tibble(fam)
+count(bim_tibble)$n
+```
+
+```{r}
+count(fam_tibble)$n
+```
+
+Assuming each row is a unique person, we find **959** people. Assuming each row is a unique SNP, we find **8348674** SNPs (the command `uniq` is used anyway, just in case).  
+
+### Question 2.  
+
+**Which chromosomes does this data set contain, and how many SNPs in each?**  
+
+```{r}
+bim_tibble %>%
+  group_by(X1) %>%
+  summarise(X2 = n_distinct(X2)) %>%
+  arrange(X1)
+```
+
+
+### Question 3.  
+
+**MAP4 (microtubule-associated protein 4) is a gene on chromosome 3 spanning positions 47,892,180 bp -- 48,130,769 bp. How many SNPs are located within MAP4 gene?**  
+
+```{r}
+bim_tibble %>% 
+  filter(X1 == 3, X4 >= 47892180, X4 <= 48130769) %>%
+  summarise(X2 = n_distinct(X2))
+```
+
+**894** SNPs are located within the MAP4 gene.  
+
+
+### Question 4.
+
+**Statistical geneticists often have to reformat a data set to feed into various analysis programs. For example, to use the Mendel software we have to reformat the data set to be read by Mendel. Mendel's SNP definition file is similar to the plink `bim` file but has format `SNP ID`, `Chromosome`, `Base Pair Position` with each field separated by a comma. Write a Linux shell command to convert `merge-geno.bim` to Mendel SNP definition file.**   
+      
+Please see the text file created.       
+      
+```{r}
+def_subset <- select(bim_tibble, X2, X1, X4)
+def_text <- 
+  "2.40=FILE FORMAT VERSION NUMBER.\n8348674=NUMBER OF SNPS LISTED HERE."
+write_lines(def_text, "hw2_def_file.txt")
+write_delim(def_subset, "hw2_def_file.txt", delim = ",", 
+            col_names = FALSE, append = TRUE)
+```
+
+```{bash}
+head -10 hw2_def_file.txt
+```
+    
+**Mendel's pedigree file is similar to the plink `fam` file but has format `Family ID`, `Person ID`, `Father ID`, `Mother ID`, `Sex` coded as M or F, `Twin Status` with each field separated by a comma. Write a Linux shell command to convert `merge-geno.fam` to Mendel pedigree file. Since twin status is not available in plink format, we put nothing for that field. Also Mendel limits Person ID to have length less than or equal to 8 characters, so we have to strip the string `T2DG` from the IDs.**  
+
+Please see the text file created.  
+
+```{r}
+ped_text <- fam_tibble %>% mutate(X2 = str_replace(X2, "^T2DG", ""),
+                                  X3 = str_replace(X3, "^T2DG", ""),
+                                  X4 = str_replace(X4, "^T2DG", ""),
+                                  X3 = str_replace(X3, "0", ""),
+                                  X4 = str_replace(X4, "0", ""),
+                                  X5 = if_else(X5 == 1, "M", "F"),
+                                  X6 = if_else(X6 == 0, "", as.character(X6)))
+write_delim(ped_text, "hw2_ped_file.txt", delim = ",", 
+            col_names = FALSE, append = TRUE)
+```
+
+```{bash}
+head -10 hw2_ped_file.txt
+```

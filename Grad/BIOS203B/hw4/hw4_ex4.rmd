@@ -1,0 +1,151 @@
+---
+title: 'BIOSTAT 203B: Homework #4, Exercise #4'
+author: "Chad Pickering"
+date: "3/16/2018"
+output: html_document
+---
+
+##### Connect, etc.:
+
+```{r, warning=FALSE, message=FALSE}
+if (!"gridExtra" %in% rownames(installed.packages())){
+  install.packages("gridExtra", repos="http://cran.rstudio.com/")
+}
+
+if (!"viridis" %in% rownames(installed.packages())){
+  install.packages("viridis", repos="http://cran.rstudio.com/")
+}
+
+library(sparklyr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(gridExtra)
+library(viridis)
+
+Sys.setenv(SPARK_HOME="/usr/lib/spark")
+config <- spark_config()
+sc <- spark_connect(master = "yarn-client", config = config)
+flights_tbl <- tbl(sc, 'flights')
+airports_tbl <- tbl(sc, 'airports')
+airlines_tbl <- tbl(sc, 'airlines')
+```
+
+### 4. Build a predictive model for the arrival delay (`arrdelay`) of flights flying from LAX. You are allowed to use a maximum of 5 predictors.  
+
+#### Model selection:  
+
+I am subsetting the dataset to include only flights from 2003 to 2007 - predictions will be more indicative of current conditions. 
+
+```{r, echo=FALSE}
+model_data <- flights_tbl %>%
+  filter(origin == "LAX") %>%  
+  filter(!is.na(arrdelay) & !is.na(depdelay) & 
+           !is.na(actualelapsedtime) & !is.na(distance)) %>%
+  filter(year >= 2003 & year <= 2007) %>%
+  filter(depdelay > 15 & depdelay < 240) %>%
+  filter(arrdelay > -60 & arrdelay < 360) %>%
+  left_join(airlines_tbl, by = c("uniquecarrier" = "code")) %>%
+  select(arrdelay, uniquecarrier, description,
+         depdelay, actualelapsedtime, distance)
+```
+
+##### Models attempted with >= 2003 and no other filters: 
+
+depdelay R2=0.8334, RMSE=11.81
+depdelay + actualelap R2=0.834, RMSE=11.79
+depdelay + distance R2=0.8338, RMSE=11.79
+depdelay + dayofweek R2=0.8334, RMSE=11.81
+depdelay + arrtime R2=0.8334, RMSE=11.81
+depdelay + uniquecarrier R2=0.8352, RMSE=11.74
+depdelay + actualelap + distance R2=0.9294, RMSE=7.686
+depdelay + uniquecarrier + actualelap + distance R2=0.9349, RMSE=7.381
+
+To avoid overfitting with more predictors, I am choosing the last mentioned with range 2003-2007.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+# Partition the data into training and validation sets
+model_partition <- model_data %>% 
+  sdf_partition(train = 0.8, valid = 0.2, seed = 5555)
+
+# Fit a linear model
+ml1 <- model_partition$train %>%
+  ml_linear_regression(arrdelay ~ depdelay + uniquecarrier + 
+                         actualelapsedtime + distance)
+
+summary(ml1)
+```
+
+#### Model performance:
+
+Here, we generate deciles to assess model performance.  
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+model_deciles <- lapply(model_partition, function(x) {
+    sdf_predict(ml1, x) %>%
+      mutate(decile = ntile(desc(prediction), 10)) %>%
+      group_by(decile) %>%
+      summarize(arrdelay_mean = mean(arrdelay)) %>%
+      select(decile, arrdelay_mean) %>%
+      collect()
+  })
+
+model_deciles
+```
+
+The training vs. validation deciles indicate that the model is quite good.  
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+deciles <- rbind(
+  data.frame(data = 'train', model_deciles$train),
+  data.frame(data = 'valid', model_deciles$valid),
+  make.row.names = FALSE
+)
+
+deciles %>%
+  ggplot(aes(factor(decile), arrdelay_mean, fill = data)) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  labs(title = 'Average arrival delay by predicted decile', x = 'Decile', y = 'Minutes')
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+data_2008 <- flights_tbl %>%
+  filter(origin == "LAX") %>%  
+  filter(!is.na(arrdelay) & !is.na(depdelay) & 
+           !is.na(actualelapsedtime) & !is.na(distance)) %>%
+  filter(year == 2008) %>%
+  filter(depdelay > 15 & depdelay < 240) %>%
+  filter(arrdelay > -60 & arrdelay < 360) %>%
+  left_join(airlines_tbl, by = c("uniquecarrier" = "code")) %>%
+  select(arrdelay, uniquecarrier, description,
+         depdelay, actualelapsedtime, distance)
+```
+
+The model is biased, but still quite accurate. If predicted mean arrival delay is adjusted downwards by about two to three minutes, this would be a very well-performing model. It is still great, though.  
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+carrier <- sdf_predict(ml1, data_2008) %>%
+  group_by(description) %>%
+  summarize(arrdelay_mean = mean(arrdelay), prediction = mean(prediction), freq = n()) %>%
+  filter(freq > 300) %>%
+  collect()
+
+carrier
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(carrier, aes(arrdelay_mean, prediction)) + 
+  geom_point(alpha = 0.75, color = 'red', shape = 3) +
+  geom_abline(intercept = 0, slope = 1, alpha = 0.15, color = 'blue') +
+  geom_text(aes(label = substr(description, 1, 20)), size = 2, alpha = 0.75, vjust = -1) +
+  labs(title='Average Arrival Delay Forecast', x = 'Actual', y = 'Predicted')
+```
+
+
+
+
+
+
+
+
+

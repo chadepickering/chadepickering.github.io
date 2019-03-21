@@ -1,0 +1,217 @@
+---
+title: "BIOSTAT M280 HW1"
+author: "Chad Pickering"
+date: "2/2/2018"
+output: html_document
+---
+
+## Q1. Git/GitHub
+
+**1. Apply for the Student Developer Pack at GitHub using your UCLA email.**    
+
+Done on January 21. My GitHub handle is @cepickering .  
+
+**2. Create a private repository `biostat-m280-2018-winter`; add `Hua-Zhou` and `juhkim111` as your collaborators with write permission.**
+
+Done on January 21. If write permission was somehow not granted, please contact me as soon as possible.  
+
+**3. Top directories of the repository should be `hw1`, `hw2`, ... Maintain two branches `master` and `develop`.**  
+
+Done on January 21. One subdirectory, `hw1` has been made, and the subsequent subdirectories will be created and used as the homeworks are assigned.  
+
+**4. After each homework due date, teaching assistant and instructor will check out your master branch for grading. Tag each of your homework submissions with tag names `hw1`, `hw2`, ... Tagging time will be used as your submission time.**  
+
+Understood.  
+
+## Q2. Linux Shell Commands  
+
+### Question 1.  
+
+**How many persons are in the data set (statisticians call this `n`)?**  
+
+```{bash}
+awk '{print $2}' /home/m280-data/hw1/merge-geno.fam | sort | uniq | wc -l
+```
+
+Assuming each row is a unique person, we find **959** people (the command `uniq` is used anyway, just in case).  
+
+**How many SNPs are in the data set (statisticians call this `p`)?**  
+
+```{bash}
+awk '{print $2}' /home/m280-data/hw1/merge-geno.bim | sort | uniq | wc -l
+```
+
+Assuming each row is a unique SNP, we find **8348674** SNPs (the command `uniq` is used anyway, just in case).
+
+### Question 2.  
+
+**Which chromosomes does this data set contain?**  
+
+```{bash}
+awk '{print $1}' /home/m280-data/hw1/merge-geno.bim | uniq
+```
+
+**How many SNPs are in each chromosome?** 
+
+```{bash}
+awk '{print $1}' /home/m280-data/hw1/merge-geno.bim | sort -n | uniq -c
+```
+
+### Question 3.  
+
+**MAP4 (microtubule-associated protein 4) is a gene on chromosome 3 spanning positions 47,892,180 bp -- 48,130,769 bp. How many SNPs are located within MAP4 gene?**  
+
+```{bash}
+awk '{if($1 == 3 && $4 >= 47892180 && $4 <= 48130769) {print $2}}\
+' /home/m280-data/hw1/merge-geno.bim | uniq | wc -l
+```
+
+**894** SNPs are located within the MAP4 gene.  
+
+### Question 4.
+
+**Statistical geneticists often have to reformat a data set to feed into various analysis programs. For example, to use the Mendel software we have to reformat the data set to be read by Mendel. Mendel's SNP definition file is similar to the plink `bim` file but has format `SNP ID`, `Chromosome`, `Base Pair Position` with each field separated by a comma. Write a Linux shell command to convert `merge-geno.bim` to Mendel SNP definition file.**   
+      
+```{bash}
+awk '{print $2","$1","$4}' /home/m280-data/hw1/merge-geno.bim > \
+hw1_def_file.txt | sed -i \
+'1 i\2.40=FILE FORMAT VERSION NUMBER.\n8348674=NUMBER OF SNPS LISTED HERE.' \
+hw1_def_file.txt ; head -20 hw1_def_file.txt
+```
+    
+**Mendel's pedigree file is similar to the plink `fam` file but has format `Family ID`, `Person ID`, `Father ID`, `Mother ID`, `Sex` coded as M or F, `Twin Status` with each field separated by a comma. Write a Linux shell command to convert `merge-geno.fam` to Mendel pedigree file. Since twin status is not available in plink format, we put nothing for that field. Also Mendel limits Person ID to have length less than or equal to 8 characters, so we have to strip the string `T2DG` from the IDs.**  
+
+```{bash}
+sed 's/ /,/g' /home/m280-data/hw1/merge-geno.fam | 
+sed 's/T2DG//g' | sed 's/\0\b//g' | 
+awk '{if($5==1) $5="M"; else $5="F"}{print}' FS=, OFS=, > hw1_ped_file.txt ; 
+head -20 hw1_ped_file.txt
+```
+
+## Q3. R Batch Run
+
+### Question 1.
+
+**Expand the `runSim.R` script to include arguments `seed` (random seed), `n` (sample size), `dist` (distribution) and `rep` (number of simulation replicates). Calling `runSim.R` will (1) set random seed according to argument `seed`, (2) generate data according to argument `dist`, (3) compute the primed-indexed average estimator in class and the classical sample average estimator for each simulation replicate, (4) report the average mean squared error (MSE)**
+$$
+  \frac{\sum_{r=1}^{\text{rep}} (\widehat \mu_r - 
+  \mu_{\text{true}})^2}{\text{rep}}
+$$
+**for both methods.**  
+
+The following is my edited `runSim.R`. Edits are made so that `autoSim.R` can call the function `avgMSE` with all arguments specified.  
+
+```{r, eval=FALSE}
+gaussian = "gaussian"
+t1 = "t1"
+t5 = "t5"
+
+## parsing command arguments
+for (arg in commandArgs(TRUE)) {
+  eval(parse(text = arg))
+}
+
+## check if a given integer is prime
+isPrime <- function(n) {
+  if (n <= 3) {
+    return (TRUE)
+  }
+  if (any((n %% 2:floor(sqrt(n))) == 0)) {
+    return (FALSE)
+  }
+  return (TRUE)
+}
+
+## estimate mean only using observation with prime indices
+estMeanPrimes <- function(x) {
+  n <- length(x)
+  ind <- sapply(1:n, isPrime)
+  return (mean(x[ind]))
+}
+
+avgMSE <- function(seed, n, dist, rep){
+  set.seed(seed)
+  prime_vector <- c()
+  classical_vector <- c()
+  
+  for(i in 1:rep){
+    if (dist == gaussian){
+      x <- rnorm(n)
+    } else if (dist == t1){ # Cauchy distribution has no mean!
+      x <- rt(n, 1)
+    } else if (dist == t5){
+      x <- rt(n, 5)
+    }
+    
+    prime_vector[i] <- (estMeanPrimes(x) - 0)^2
+    classical_vector[i] <- (mean(x) - 0)^2
+  }
+  
+  prime_mse <- sum(prime_vector)/rep
+  classical_mse <- sum(classical_vector)/rep
+  return(c(prime_mse, classical_mse))
+}
+
+avgMSE(seed, n, dist, rep)
+```
+
+
+### Question 2. 
+
+**Modify the `autoSim.R` script to run simulations with combinations of sample sizes `nVals = seq(100, 500, by=100)` and distributions `distTypes = c("gaussian", "t1", "t5")` and write output to appropriately named files. Use `rep = 50`, and `seed = 280`.**  
+
+The following code assembles the bash commands to call `runSim.R` with specified arguments so as to push the output to similarly named files.  
+
+```{r, eval=FALSE}
+nVals <- seq(100, 500, by=100)
+dist <- c("gaussian", "t1", "t5")
+for (i in 1:3) {
+  for (n in nVals) {
+    oFile <- paste(dist[i], '_n', n, '.txt', sep='')
+    arg <- paste('n=', n, sep='')
+    sysCall <- paste('nohup Rscript runSim.R seed=280 ', arg, ' dist="', 
+                    dist[i], '" rep=50', " > ", oFile, sep='')
+    system(sysCall, ignore.stderr = TRUE)
+    print(sysCall)
+  }
+}
+```
+
+```{bash, echo=FALSE, results=FALSE}
+Rscript autoSim.R
+```
+
+### Question 3. 
+
+**Write an R script to collect simulation results from output files and print average MSEs in the table, form provided in the instructions.**  
+
+```{r}
+library(knitr)
+nVals <- seq(100, 500, by=100)
+dist <- c("gaussian", "t1", "t5")
+filenames <- c()
+for (i in 1:3) {
+  for (n in nVals) {
+    oFile <- paste(dist[i], '_n', n, '.txt', sep='')
+    filenames <- append(filenames, oFile)
+  }
+}
+
+means_raw <- lapply(filenames, function(x) read.table(x, header=FALSE))
+means_df_raw <- do.call("rbind", means_raw) 
+means_df_raw <- means_df_raw[ ,-1]
+transpose_means <- t(means_df_raw)
+gaussian_col <- c(transpose_means[ ,1:5])
+t1_col <- c(transpose_means[ ,6:10])
+t5_col <- c(transpose_means[ ,11:15])
+final_df <- as.data.frame(cbind(t1_col, t5_col, gaussian_col))
+final_df$n <- rep(nVals, each=2)
+final_df$Method <- rep(c("PrimeAvg", "SampleAvg"), by=5)
+final_df <- final_df[ ,c(4, 5, 1, 2, 3)]
+colnames(final_df) <- c("$n$", "Method", "$t_1$", "$t_5$", "Gaussian")
+```
+
+```{r, echo=FALSE, results='asis'}
+kable(final_df)
+```
+
