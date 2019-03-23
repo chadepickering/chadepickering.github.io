@@ -6,7 +6,7 @@ The following are a selection of the projects I have submitted in graduate schoo
 and as an undergraduate at UC Davis, where I received a B.S. in statistics with a minor in computer science.
 
 
-### Graduate Projects (Selection)
+## Graduate Projects (Selection)
 
 #### BIOS 234: Applied Bayesian Inference (Winter 2019)
 - [Effects of Working, Menstrual Cycle Phase, and Family History 
@@ -50,9 +50,8 @@ and Risk of Acquiring Infection](Grad/BIOS200B/200B_proj1.pdf)
 Serious Crimes per Capita in U.S. Cities](Grad/BIOS200B/200B_proj2.pdf)
 
 <br/>
-<br/>
 
-### Undergraduate Projects (Selection)
+## Undergraduate Projects (Selection)
 
 #### STA 141B: Web Technologies for Data Analysis (Winter 2017)
 - [Project 1: Doomsday Algorithm](Undergrad/STA141B/assignment1.html)
