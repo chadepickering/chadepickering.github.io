@@ -2,3 +2,5 @@
 ---
 
 @import "{{ site.theme }}";
+@import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+.remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
