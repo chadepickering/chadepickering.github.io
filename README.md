@@ -1,11 +1,3 @@
-Welcome! I'm Chad Pickering, a biostatistics graduate student at UCLA graduating in spring 2019. 
-I am seeking full-time employment in the Bay Area in the intersection of data science and biostatistics 
-in the pharmaceutical or biotechnology industries. 
-
-The following are a selection of the projects I have submitted in graduate school at UCLA 
-and as an undergraduate at UC Davis, where I received a B.S. in statistics with a minor in computer science.
-
-
 ## Graduate Projects (Selection)
 
 #### BIOS 234: Applied Bayesian Inference (Winter 2019)
