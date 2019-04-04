@@ -3,8 +3,8 @@
 #### BIOS 234: Applied Bayesian Inference (Winter 2019)
 - [Effects of Working, Menstrual Cycle Phase, and Family History 
 of Hypertension on the Systolic Blood Pressure of Nurses](Grad/BIOS234/234_proj1.pdf)
-- [A Bayesian Analysis of the Perception of Transgender
-Acceptance in the U.S. Military](Grad/BIOS234/234_finalproj.pdf)
+- A Bayesian Analysis of the Perception of Transgender
+Acceptance in the U.S. Military (not published yet; will supply document upon request)
 
 #### BIOS 213: Computational Methods and Simulations in Biostatistics (Fall 2018)
 - [The Effect of Voicemails on Voter Interaction with a
