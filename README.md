@@ -1,10 +1,26 @@
 ## Graduate Projects (Selection)
 
+#### Master's Report (Winter/Spring 2019)
+- [Association Between Cytomegalovirus Viremia and Incident
+Retinitis, Progression of Existing Lesions, and Reactivation in HIV+
+Patients in the U.S.](Grad/MastersReport/PickeringC_MastersReport.pdf)
+- [Association Between Cytomegalovirus Viremia and Incident
+Retinitis, Progression of Existing Lesions, and Reactivation in HIV+
+Patients in the U.S. (Presentation version)](Grad/MastersReport/mastersreport_pres.pdf)
+
+#### BIOS 238: Methodology of Clinical Trials (Spring 2019)
+- [Bayesian Methods for the Design and Interpretation of Clinical Trials in Very
+Rare Diseases (Presentation)](Grad/BIOS238/bayesian_pres.pdf)
+
+#### BIOS 244: Master's Seminar and Research Resources for Graduating Biostatistics MS Students (Spring 2019)
+- [An Introduction to Longitudinal Data Analysis with Examples 
+(Presentation)](Grad/BIOS244/longitudinal_pres.pdf)
+
 #### BIOS 234: Applied Bayesian Inference (Winter 2019)
 - [Effects of Working, Menstrual Cycle Phase, and Family History 
 of Hypertension on the Systolic Blood Pressure of Nurses](Grad/BIOS234/234_proj1.pdf)
-- A Bayesian Analysis of the Perception of Transgender
-Acceptance in the U.S. Military (not published yet; will supply document upon request)
+- [A Bayesian Analysis of the Perception of Transgender
+Acceptance in the U.S. Military](Grad/BIOS234/234_final.pdf)
 
 #### BIOS 213: Computational Methods and Simulations in Biostatistics (Fall 2018)
 - [The Effect of Voicemails on Voter Interaction with a
