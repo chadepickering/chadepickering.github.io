@@ -11,6 +11,8 @@ Patients in the U.S. (Presentation version)](Grad/MastersReport/mastersreport_pr
 #### BIOS 238: Methodology of Clinical Trials (Spring 2019)
 - [Bayesian Methods for the Design and Interpretation of Clinical Trials in Very
 Rare Diseases (Presentation)](Grad/BIOS238/bayesian_pres.pdf)
+- [Group Sequential Test Simulation Study, Power Calculations, 
+and Expected Terminating Sample Size](Grad/BIOS238/groupseq_hw.pdf)
 
 #### BIOS 244: Master's Seminar and Research Resources for Graduating Biostatistics MS Students (Spring 2019)
 - [An Introduction to Longitudinal Data Analysis with Examples 
