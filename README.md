@@ -36,7 +36,7 @@ Diagnoses in the LA Metro Region](Grad/BIOS215/215_finalproj.pdf)
 - [A Machine Learning Approach to Predict Forest Fires
 using Meteorological Data (R version)](Grad/BIOS273/273_finalproj_R.pdf)
 - [A Machine Learning Approach to Predict Forest Fires
-using Meteorological Data (Python version)](Grad/BIOS273/273_finalproj_python.pdf)
+using Meteorological Data (Python version)](Grad/BIOS273/273_finalproj_py.pdf)
 
 #### BIOS 200C: Methods in Biostatistics III (Spring 2018)
 - [Disparities Associated with Screenings for Colorectal Cancer 
