@@ -10,7 +10,9 @@
 
 - [LGBT Health, 2021: Mental Health and Health Risk Behaviors of Active Duty Sexual Minority and Transgender Service Members in the United States Military](https://journals.sagepub.com/doi/full/10.1089/lgbt.2020.0031)
 - [Military Behavioral Health, 2020: Group Perceptions of Acceptance of Racial/Ethnic, Sexual and Gender Minorities in the United States Military](https://www.tandfonline.com/doi/full/10.1080/21635781.2020.1819486)
+  - [Full PDF](Grad/CCPR/Green2020_Group_Perceptions_of_Acceptance.pdf)
 - [Sexuality Research and Social Policy, 2020: Support for Transgender Military Service from Active Duty United States Military Personnel](https://link.springer.com/article/10.1007/s13178-020-00437-x)
+  - [Full PDF](Grad/CCPR/Dunlap2020_Sexuality_Research_and_Social_Policy.pdf)
 
 #### Master's Report (Winter/Spring 2019)
 - [Association Between Cytomegalovirus Viremia and Incident
