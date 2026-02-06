@@ -1,3 +1,9 @@
+## InterVenn Biosciences: Peer-Reviewed Publications (Selection)
+
+- [British Journal of Cancer, 2024: Diagnosing and staging epithelial ovarian cancer by serum glycoproteomic profiling](https://www.nature.com/articles/s41416-024-02644-4)
+- [Frontiers in Immunology, 2023: Plasma glycoproteomic biomarkers identify metastatic melanoma patients with reduced clinical benefit from immune checkpoint inhibitor therapy](https://www.frontiersin.org/journals/immunology/articles/10.3389/fimmu.2023.1187332/full)
+- [Viruses, 2022: Differential Peripheral Blood Glycoprotein Profiles in Symptomatic and Asymptomatic COVID-19](https://www.mdpi.com/1999-4915/14/3/553)
+
 ## Graduate Projects (Selection)
 
 #### Master's Report (Winter/Spring 2019)
