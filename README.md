@@ -1,4 +1,4 @@
-## Personal Projects (End-to-End Full-Stack ML/AI)
+## Independent Production-Grade ML/AI Projects
 
 - [Developing and Deploying a 30-Day Hospital Readmission Prediction System for Diabetes Patients](uci-diabetes/index.html)
 
