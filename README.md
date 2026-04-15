@@ -1,3 +1,7 @@
+## Personal Projects (End-to-End Full-Stack ML/AI)
+
+- [Developing and Deploying a 30-Day Hospital Readmission Prediction System for Diabetes Patients](uci-diabetes/index.html)
+
 ## InterVenn Biosciences: Peer-Reviewed Publications (Selection)
 
 - [British Journal of Cancer, 2024: Diagnosing and staging epithelial ovarian cancer by serum glycoproteomic profiling](https://www.nature.com/articles/s41416-024-02644-4)
