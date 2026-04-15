@@ -275,7 +275,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>This case study applies a full-stack analytical pipeline to the UCI 130-US Hospitals Diabetes dataset — a longitudinal collection of 101,766 inpatient encounters from 130 US hospitals spanning 1999–2008. The outcome of interest is <strong>30-day hospital readmission</strong>, a high-cost, partially preventable event targeted by the 2010 Hospital Readmissions Reduction Program (HRRP).</p>
 <p>The work is organized in two parts:</p>
 <hr>
-<p><strong>Part 1 — Statistical Analysis</strong> begins with rigorous exploratory data analysis, causal inference (AIPW, IPTW, PSM) to estimate the effect of HbA1c testing on readmission, and a prospective experimental design including power analysis for a model deployment trial.</p>
+<p><strong>Part 1 — Statistical Analysis</strong> begins with rigorous exploratory data analysis, causal inference (AIPW, IPTW, PSM) to estimate the effect of HbA1c testing etc. on readmission, and a prospective experimental design including power analysis for a model deployment trial.</p>
 <p><strong>Part 2 — Machine Learning Evaluation</strong> covers the full modeling pipeline: four competing classifiers (Logistic Regression, XGBoost, LightGBM, TF/Keras), hyperparameter optimization via Optuna, probability calibration, model selection, holdout evaluation, SHAP-based interpretability, subgroup and fairness analysis, and simulated production drift monitoring.</p>
 <hr>
 <section id="dataset" class="level2">
@@ -304,34 +304,79 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td>Data ingestion &amp; feature engineering</td>
-<td>dbt + Snowflake</td>
-<td><code>DIABETES_FEATURES</code> mart</td>
+<td><strong>Raw data ingestion</strong></td>
+<td>PySpark 3.5, Snowflake Spark Connector</td>
+<td>Raw encounter table loaded to Snowflake (Google Cloud)</td>
 </tr>
 <tr class="even">
-<td>EDA &amp; causal inference</td>
-<td>R (tidyverse, MatchIt, WeightIt)</td>
-<td>Part 1 chapters</td>
+<td><strong>Data warehousing &amp; transformation</strong></td>
+<td>Snowflake, dbt 1.11.7</td>
+<td>Deduplication, exclusion criteria, and imputation applied in the dbt marts layer</td>
 </tr>
 <tr class="odd">
-<td>Experimental design</td>
-<td>R (pwr)</td>
-<td>Part 1 Chapter 3</td>
+<td><strong>Feature engineering &amp; preprocessing</strong></td>
+<td>Python, scikit-learn (<code>ColumnTransformer</code>, <code>OrdinalEncoder</code>, <code>StandardScaler</code>, <code>OneHotEncoder</code>)</td>
+<td>Parquet train/validation/holdout splits + <code>preprocessor.joblib</code> to be used in val/holdout to transform raw features</td>
 </tr>
 <tr class="even">
-<td>Model training &amp; tuning</td>
-<td>Python (XGBoost, LightGBM, TF/Keras, Optuna)</td>
-<td>Calibrated <code>.joblib</code> / <code>.keras</code> artifacts</td>
+<td><strong>Exploratory data analysis</strong></td>
+<td>R 4.3.2, tidyverse, kableExtra</td>
+<td>Outcome distribution, covariate profiles, missingness analysis, Spearman and Cramer’s V correlation matrices, etc.</td>
 </tr>
 <tr class="odd">
-<td>Evaluation &amp; interpretability</td>
-<td>Python (SHAP, scikit-learn)</td>
-<td>Part 2 Chapter 1</td>
+<td><strong>Causal inference</strong></td>
+<td>R, WeightIt (AIPW, IPTW), MatchIt (PSM), sandwich estimators</td>
+<td>Directional effect estimates for HbA1c, insulin change, and prior utilization; E-value sensitivity analysis</td>
 </tr>
 <tr class="even">
-<td>Drift monitoring</td>
-<td>Python (scipy, PSI)</td>
-<td>Part 2 Chapter 2</td>
+<td><strong>Experimental design</strong></td>
+<td>R, pwr</td>
+<td>Group sequential design (O’Brien-Fleming), power analysis, etc.</td>
+</tr>
+<tr class="odd">
+<td><strong>Model training — Logistic Regression</strong></td>
+<td>scikit-learn <code>LogisticRegression</code>, Optuna, Elastic Net regularization</td>
+<td><code>lr_model.joblib</code> + Platt-calibrated probabilities</td>
+</tr>
+<tr class="even">
+<td><strong>Model training — XGBoost</strong></td>
+<td>XGBoost, Optuna, scikit-learn <code>CalibratedClassifierCV</code></td>
+<td><code>xgb_model.joblib</code> + calibrated probabilities; selected for deployment</td>
+</tr>
+<tr class="odd">
+<td><strong>Model training — LightGBM</strong></td>
+<td>LightGBM, Optuna, scikit-learn <code>CalibratedClassifierCV</code></td>
+<td><code>lgbm_model.joblib</code> + calibrated probabilities</td>
+</tr>
+<tr class="even">
+<td><strong>Model training — Neural Network</strong></td>
+<td>TensorFlow / Keras (multi-layer perceptron with cosine decay and dropout), Optuna, isotonic calibration</td>
+<td><code>tf_model.keras</code> + <code>tf_calibrator.joblib</code></td>
+</tr>
+<tr class="odd">
+<td><strong>Evaluation &amp; model selection</strong></td>
+<td>scikit-learn (AUC-ROC, AUC-PR, Brier score), matplotlib</td>
+<td>Threshold sweep, calibration curves, train–validation gap analysis, holdout evaluation</td>
+</tr>
+<tr class="even">
+<td><strong>Interpretability</strong></td>
+<td>SHAP (<code>TreeExplainer</code>, <code>DeepExplainer</code>), pandas, matplotlib</td>
+<td>Mean |SHAP| rankings per model, cross-model directionality comparison, causal consistency check vs previous estimates, etc.</td>
+</tr>
+<tr class="odd">
+<td><strong>Subgroup &amp; fairness analysis</strong></td>
+<td>pandas, scikit-learn</td>
+<td>AUC-ROC and flag rate stratified by diagnosis group, age band, admission type, race, and gender; disparity ratios, etc.</td>
+</tr>
+<tr class="even">
+<td><strong>Drift monitoring</strong></td>
+<td>Python, scipy, PSI (stability index)</td>
+<td>4-batch semi-annual simulation; KS statistic, PSI by feature, AUC and flag-rate trajectories across deployment periods, etc.</td>
+</tr>
+<tr class="odd">
+<td><strong>Reproducible reporting</strong></td>
+<td>Quarto 1.9, R Quarto book, Jupyter kernel, custom CSS</td>
+<td>This combined HTML book hosted on GitHub Pages</td>
 </tr>
 </tbody>
 </table>
@@ -341,7 +386,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <ul>
 <li><strong>Deployed model:</strong> XGBoost (AUC-ROC 0.687 holdout, calibrated, τ = 0.12)</li>
 <li><strong>Flag rate:</strong> ~15% of encounters flagged for intervention</li>
-<li><strong>Causal anchor:</strong> HbA1c testing reduces readmission (AIPW RR ~0.92), consistent with SHAP directions</li>
+<li><strong>Causal anchor:</strong> HbA1c testing reduces readmission (AIPW RR ~0.92), consistent with SHAP directions and peer-reviewed literature</li>
 <li><strong>Drift:</strong> No alerts across four simulated semi-annual deployment periods</li>
 </ul>
 
@@ -826,7 +871,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>**Part 1 — Statistical Analysis** begins with rigorous exploratory data</span>
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>analysis, causal inference (AIPW, IPTW, PSM) to estimate the effect of HbA1c</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>testing on readmission, and a prospective experimental design including power</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>testing etc. on readmission, and a prospective experimental design including power</span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>analysis for a model deployment trial.</span>
 <span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>**Part 2 — Machine Learning Evaluation** covers the full modeling pipeline:</span>
@@ -848,19 +893,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Stage <span class="pp">|</span> Tool <span class="pp">|</span> Output <span class="pp">|</span></span>
 <span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="pp">|---|---|---|</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Data ingestion &amp; feature engineering <span class="pp">|</span> dbt + Snowflake <span class="pp">|</span> <span class="in">`DIABETES_FEATURES`</span> mart <span class="pp">|</span></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> EDA &amp; causal inference <span class="pp">|</span> R (tidyverse, MatchIt, WeightIt) <span class="pp">|</span> Part 1 chapters <span class="pp">|</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Experimental design <span class="pp">|</span> R (pwr) <span class="pp">|</span> Part 1 Chapter 3 <span class="pp">|</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Model training &amp; tuning <span class="pp">|</span> Python (XGBoost, LightGBM, TF/Keras, Optuna) <span class="pp">|</span> Calibrated <span class="in">`.joblib`</span> / <span class="in">`.keras`</span> artifacts <span class="pp">|</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Evaluation &amp; interpretability <span class="pp">|</span> Python (SHAP, scikit-learn) <span class="pp">|</span> Part 2 Chapter 1 <span class="pp">|</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> Drift monitoring <span class="pp">|</span> Python (scipy, PSI) <span class="pp">|</span> Part 2 Chapter 2 <span class="pp">|</span></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="fu">## Selected Results</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Deployed model:** XGBoost (AUC-ROC 0.687 holdout, calibrated, τ = 0.12)</span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Flag rate:** ~15% of encounters flagged for intervention</span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Causal anchor:** HbA1c testing reduces readmission (AIPW RR ~0.92), consistent with SHAP directions</span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Drift:** No alerts across four simulated semi-annual deployment periods</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Raw data ingestion** <span class="pp">|</span> PySpark 3.5, Snowflake Spark Connector <span class="pp">|</span> Raw encounter table loaded to Snowflake (Google Cloud) <span class="pp">|</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Data warehousing &amp; transformation** <span class="pp">|</span> Snowflake, dbt 1.11.7 <span class="pp">|</span> Deduplication, exclusion criteria, and imputation applied in the dbt marts layer <span class="pp">|</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Feature engineering &amp; preprocessing** <span class="pp">|</span> Python, scikit-learn (<span class="in">`ColumnTransformer`</span>, <span class="in">`OrdinalEncoder`</span>, <span class="in">`StandardScaler`</span>, <span class="in">`OneHotEncoder`</span>) <span class="pp">|</span> Parquet train/validation/holdout splits + <span class="in">`preprocessor.joblib`</span> to be used in val/holdout to transform raw features <span class="pp">|</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Exploratory data analysis** <span class="pp">|</span> R 4.3.2, tidyverse, kableExtra <span class="pp">|</span> Outcome distribution, covariate profiles, missingness analysis, Spearman and Cramer's V correlation matrices, etc. <span class="pp">|</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Causal inference** <span class="pp">|</span> R, WeightIt (AIPW, IPTW), MatchIt (PSM), sandwich estimators <span class="pp">|</span> Directional effect estimates for HbA1c, insulin change, and prior utilization; E-value sensitivity analysis <span class="pp">|</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Experimental design** <span class="pp">|</span> R, pwr <span class="pp">|</span> Group sequential design (O'Brien-Fleming), power analysis, etc. <span class="pp">|</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Model training — Logistic Regression** <span class="pp">|</span> scikit-learn <span class="in">`LogisticRegression`</span>, Optuna, Elastic Net regularization <span class="pp">|</span> <span class="in">`lr_model.joblib`</span> + Platt-calibrated probabilities <span class="pp">|</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Model training — XGBoost** <span class="pp">|</span> XGBoost, Optuna, scikit-learn <span class="in">`CalibratedClassifierCV`</span> <span class="pp">|</span> <span class="in">`xgb_model.joblib`</span> + calibrated probabilities; selected for deployment <span class="pp">|</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Model training — LightGBM** <span class="pp">|</span> LightGBM, Optuna, scikit-learn <span class="in">`CalibratedClassifierCV`</span> <span class="pp">|</span> <span class="in">`lgbm_model.joblib`</span> + calibrated probabilities <span class="pp">|</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Model training — Neural Network** <span class="pp">|</span> TensorFlow / Keras (multi-layer perceptron with cosine decay and dropout), Optuna, isotonic calibration <span class="pp">|</span> <span class="in">`tf_model.keras`</span> + <span class="in">`tf_calibrator.joblib`</span> <span class="pp">|</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Evaluation &amp; model selection** <span class="pp">|</span> scikit-learn (AUC-ROC, AUC-PR, Brier score), matplotlib <span class="pp">|</span> Threshold sweep, calibration curves, train–validation gap analysis, holdout evaluation <span class="pp">|</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Interpretability** <span class="pp">|</span> SHAP (<span class="in">`TreeExplainer`</span>, <span class="in">`DeepExplainer`</span>), pandas, matplotlib <span class="pp">|</span> Mean <span class="sc">\|</span>SHAP<span class="sc">\|</span> rankings per model, cross-model directionality comparison, causal consistency check vs previous estimates, etc. <span class="pp">|</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Subgroup &amp; fairness analysis** <span class="pp">|</span> pandas, scikit-learn <span class="pp">|</span> AUC-ROC and flag rate stratified by diagnosis group, age band, admission type, race, and gender; disparity ratios, etc. <span class="pp">|</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Drift monitoring** <span class="pp">|</span> Python, scipy, PSI (stability index) <span class="pp">|</span> 4-batch semi-annual simulation; KS statistic, PSI by feature, AUC and flag-rate trajectories across deployment periods, etc. <span class="pp">|</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="pp">|</span> **Reproducible reporting** <span class="pp">|</span> Quarto 1.9, R Quarto book, Jupyter kernel, custom CSS <span class="pp">|</span> This combined HTML book hosted on GitHub Pages <span class="pp">|</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="fu">## Selected Results</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Deployed model:** XGBoost (AUC-ROC 0.687 holdout, calibrated, τ = 0.12)</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Flag rate:** ~15% of encounters flagged for intervention</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Causal anchor:** HbA1c testing reduces readmission (AIPW RR ~0.92), consistent with SHAP directions and peer-reviewed literature</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Drift:** No alerts across four simulated semi-annual deployment periods</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
