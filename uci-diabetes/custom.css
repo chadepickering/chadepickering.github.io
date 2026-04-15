@@ -1,0 +1,9 @@
+.sidebar-navigation .chapter-number {
+  display: none;
+}
+
+/* Prevent matplotlib/Python figures from overflowing the body width */
+.cell-output img {
+  max-width: 100%;
+  height: auto;
+}

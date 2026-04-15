@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Quarto build artifacts
+.quarto/
+*_files/
+*.quarto_ipynb
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# R
+.Rhistory
+.RData
+.Rproj.user/
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/

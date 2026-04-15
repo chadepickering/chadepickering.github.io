@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>5&nbsp; Deployment Drift Monitoring – UCI Diabetes 30-Day Readmission: A Full-Stack Analytical Case Study</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<link href="../part2/01_model_eval.html" rel="prev">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-5ccb035bea26c1e21f80f44cf7c27909.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+<link rel="stylesheet" href="../custom.css">
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../part2/index.html">Part 2 — Machine Learning Evaluation</a></li><li class="breadcrumb-item"><a href="../part2/02_drift_monitoring.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Deployment Drift Monitoring</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="../">UCI Diabetes 30-Day Readmission: A Full-Stack Analytical Case Study</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Preface</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part 1 — Statistical Analysis</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../part1/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../part1/01_eda.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Exploratory Data Analysis</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../part1/02_causal_inference.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Causal Inference</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../part1/03_experimental_design.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Experimental Design</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true">
+ <span class="menu-text">Part 2 — Machine Learning Evaluation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" role="navigation" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../part2/index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Overview</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../part2/01_model_eval.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Model Evaluation</span></span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../part2/02_drift_monitoring.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Deployment Drift Monitoring</span></span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#setup" id="toc-setup" class="nav-link active" data-scroll-target="#setup"><span class="header-section-number">5.1</span> Setup</a></li>
+  <li><a href="#batch-summary" id="toc-batch-summary" class="nav-link" data-scroll-target="#batch-summary"><span class="header-section-number">5.2</span> Batch Summary</a></li>
+  <li><a href="#auc-roc-and-flag-rate-over-time" id="toc-auc-roc-and-flag-rate-over-time" class="nav-link" data-scroll-target="#auc-roc-and-flag-rate-over-time"><span class="header-section-number">5.3</span> AUC-ROC and Flag Rate Over Time</a></li>
+  <li><a href="#ks-statistic-score-distribution-drift" id="toc-ks-statistic-score-distribution-drift" class="nav-link" data-scroll-target="#ks-statistic-score-distribution-drift"><span class="header-section-number">5.4</span> KS Statistic — Score Distribution Drift</a></li>
+  <li><a href="#psi-input-feature-drift" id="toc-psi-input-feature-drift" class="nav-link" data-scroll-target="#psi-input-feature-drift"><span class="header-section-number">5.5</span> PSI — Input Feature Drift</a></li>
+  <li><a href="#interpretation" id="toc-interpretation" class="nav-link" data-scroll-target="#interpretation"><span class="header-section-number">5.6</span> Interpretation</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../part2/index.html">Part 2 — Machine Learning Evaluation</a></li><li class="breadcrumb-item"><a href="../part2/02_drift_monitoring.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Deployment Drift Monitoring</span></a></li></ol></nav>
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">Deployment Drift Monitoring</span></h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This chapter evaluates model stability across simulated production traffic. The holdout set (13,917 encounters) is divided into four temporal batches representing semi-annual scoring periods (~6 months each, covering approximately 2007–2008), fed through the deployed model in encounter order. All metrics use the <strong>training set as the reference distribution</strong> — the same baseline the model was built on.</p>
+<section id="setup" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="setup"><span class="header-section-number">5.1</span> Setup</h2>
+</section>
+<section id="batch-summary" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="batch-summary"><span class="header-section-number">5.2</span> Batch Summary</h2>
+<p>The holdout set is ordered by encounter index (reflecting the temporal encounter_id sort from the Snowflake mart) and divided into four equal-sized semi-annual batches (~3,479 encounters each, representing ~6-month windows across 2007–2008).</p>
+<div id="cell-batch-summary" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>summary <span class="op">=</span> df_drift[[</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"batch"</span>, <span class="st">"n_rows"</span>, <span class="st">"auc_roc"</span>, <span class="st">"flag_rate"</span>, <span class="st">"pos_rate"</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ks_stat"</span>, <span class="st">"ks_pval"</span>, <span class="st">"mean_psi"</span>, <span class="st">"drift_alert"</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>]].copy()</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>summary.columns <span class="op">=</span> [</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Batch"</span>, <span class="st">"N"</span>, <span class="st">"AUC-ROC"</span>, <span class="st">"Flag Rate"</span>, <span class="st">"Pos Rate"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"KS Stat"</span>, <span class="st">"KS p-val"</span>, <span class="st">"Mean PSI"</span>, <span class="st">"Alert"</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>summary[<span class="st">"Batch"</span>] <span class="op">=</span> summary[<span class="st">"Batch"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"P</span><span class="sc">{</span>x<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>summary[<span class="st">"Alert"</span>] <span class="op">=</span> summary[<span class="st">"Alert"</span>].<span class="bu">map</span>({<span class="va">True</span>: <span class="st">"⚠"</span>, <span class="va">False</span>: <span class="st">"✓"</span>})</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>summary.set_index(<span class="st">"Batch"</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>summary.style <span class="op">\</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">format</span>({</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="st">"AUC-ROC"</span>:   <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Flag Rate"</span>: <span class="st">"</span><span class="sc">{:.3f}</span><span class="st">"</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Pos Rate"</span>:  <span class="st">"</span><span class="sc">{:.3f}</span><span class="st">"</span>,</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"KS Stat"</span>:   <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"KS p-val"</span>:  <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Mean PSI"</span>:  <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    }) <span class="op">\</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    .background_gradient(subset<span class="op">=</span>[<span class="st">"AUC-ROC"</span>], cmap<span class="op">=</span><span class="st">"RdYlGn"</span>, vmin<span class="op">=</span><span class="fl">0.6</span>, vmax<span class="op">=</span><span class="fl">0.75</span>) <span class="op">\</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    .background_gradient(subset<span class="op">=</span>[<span class="st">"KS Stat"</span>], cmap<span class="op">=</span><span class="st">"RdYlGn_r"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.1</span>) <span class="op">\</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    .background_gradient(subset<span class="op">=</span>[<span class="st">"Mean PSI"</span>], cmap<span class="op">=</span><span class="st">"RdYlGn_r"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div id="batch-summary" class="cell-output cell-output-display" data-execution_count="2">
+<style type="text/css">
+#T_1f54a_row0_col1 {
+  background-color: #bbe278;
+  color: #000000;
+}
+#T_1f54a_row0_col4 {
+  background-color: #abdb6d;
+  color: #000000;
+}
+#T_1f54a_row0_col6 {
+  background-color: #69be63;
+  color: #f1f1f1;
+}
+#T_1f54a_row1_col1 {
+  background-color: #fee18d;
+  color: #000000;
+}
+#T_1f54a_row1_col4, #T_1f54a_row3_col6 {
+  background-color: #addc6f;
+  color: #000000;
+}
+#T_1f54a_row1_col6 {
+  background-color: #87cb67;
+  color: #000000;
+}
+#T_1f54a_row2_col1 {
+  background-color: #fee999;
+  color: #000000;
+}
+#T_1f54a_row2_col4 {
+  background-color: #fffbb8;
+  color: #000000;
+}
+#T_1f54a_row2_col6 {
+  background-color: #a7d96b;
+  color: #000000;
+}
+#T_1f54a_row3_col1 {
+  background-color: #fff7b2;
+  color: #000000;
+}
+#T_1f54a_row3_col4 {
+  background-color: #eef8a8;
+  color: #000000;
+}
+</style>
+
+<table id="T_1f54a" class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="blank level0" data-quarto-table-cell-role="th">&nbsp;</th>
+<th id="T_1f54a_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">N</th>
+<th id="T_1f54a_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">AUC-ROC</th>
+<th id="T_1f54a_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Flag Rate</th>
+<th id="T_1f54a_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Pos Rate</th>
+<th id="T_1f54a_level0_col4" class="col_heading level0 col4" data-quarto-table-cell-role="th">KS Stat</th>
+<th id="T_1f54a_level0_col5" class="col_heading level0 col5" data-quarto-table-cell-role="th">KS p-val</th>
+<th id="T_1f54a_level0_col6" class="col_heading level0 col6" data-quarto-table-cell-role="th">Mean PSI</th>
+<th id="T_1f54a_level0_col7" class="col_heading level0 col7" data-quarto-table-cell-role="th">Alert</th>
+</tr>
+<tr class="even">
+<th class="index_name level0" data-quarto-table-cell-role="th">Batch</th>
+<th class="blank col0" data-quarto-table-cell-role="th">&nbsp;</th>
+<th class="blank col1" data-quarto-table-cell-role="th">&nbsp;</th>
+<th class="blank col2" data-quarto-table-cell-role="th">&nbsp;</th>
+<th class="blank col3" data-quarto-table-cell-role="th">&nbsp;</th>
+<th class="blank col4" data-quarto-table-cell-role="th">&nbsp;</th>
+<th class="blank col5" data-quarto-table-cell-role="th">&nbsp;</th>
+<th class="blank col6" data-quarto-table-cell-role="th">&nbsp;</th>
+<th class="blank col7" data-quarto-table-cell-role="th">&nbsp;</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th id="T_1f54a_level0_row0" class="row_heading level0 row0" data-quarto-table-cell-role="th">P1</th>
+<td id="T_1f54a_row0_col0" class="data row0 col0">3479</td>
+<td id="T_1f54a_row0_col1" class="data row0 col1">0.6985</td>
+<td id="T_1f54a_row0_col2" class="data row0 col2">0.143</td>
+<td id="T_1f54a_row0_col3" class="data row0 col3">0.053</td>
+<td id="T_1f54a_row0_col4" class="data row0 col4">0.0312</td>
+<td id="T_1f54a_row0_col5" class="data row0 col5">0.0036</td>
+<td id="T_1f54a_row0_col6" class="data row0 col6">0.0407</td>
+<td id="T_1f54a_row0_col7" class="data row0 col7">✓</td>
+</tr>
+<tr class="even">
+<th id="T_1f54a_level0_row1" class="row_heading level0 row1" data-quarto-table-cell-role="th">P2</th>
+<td id="T_1f54a_row1_col0" class="data row1 col0">3479</td>
+<td id="T_1f54a_row1_col1" class="data row1 col1">0.6604</td>
+<td id="T_1f54a_row1_col2" class="data row1 col2">0.139</td>
+<td id="T_1f54a_row1_col3" class="data row1 col3">0.050</td>
+<td id="T_1f54a_row1_col4" class="data row1 col4">0.0316</td>
+<td id="T_1f54a_row1_col5" class="data row1 col5">0.0029</td>
+<td id="T_1f54a_row1_col6" class="data row1 col6">0.0504</td>
+<td id="T_1f54a_row1_col7" class="data row1 col7">✓</td>
+</tr>
+<tr class="odd">
+<th id="T_1f54a_level0_row2" class="row_heading level0 row2" data-quarto-table-cell-role="th">P3</th>
+<td id="T_1f54a_row2_col0" class="data row2 col0">3479</td>
+<td id="T_1f54a_row2_col1" class="data row2 col1">0.6639</td>
+<td id="T_1f54a_row2_col2" class="data row2 col2">0.143</td>
+<td id="T_1f54a_row2_col3" class="data row2 col3">0.051</td>
+<td id="T_1f54a_row2_col4" class="data row2 col4">0.0515</td>
+<td id="T_1f54a_row2_col5" class="data row2 col5">0.0000</td>
+<td id="T_1f54a_row2_col6" class="data row2 col6">0.0603</td>
+<td id="T_1f54a_row2_col7" class="data row2 col7">✓</td>
+</tr>
+<tr class="even">
+<th id="T_1f54a_level0_row3" class="row_heading level0 row3" data-quarto-table-cell-role="th">P4</th>
+<td id="T_1f54a_row3_col0" class="data row3 col0">3480</td>
+<td id="T_1f54a_row3_col1" class="data row3 col1">0.6712</td>
+<td id="T_1f54a_row3_col2" class="data row3 col2">0.150</td>
+<td id="T_1f54a_row3_col3" class="data row3 col3">0.068</td>
+<td id="T_1f54a_row3_col4" class="data row3 col4">0.0455</td>
+<td id="T_1f54a_row3_col5" class="data row3 col5">0.0000</td>
+<td id="T_1f54a_row3_col6" class="data row3 col6">0.0626</td>
+<td id="T_1f54a_row3_col7" class="data row3 col7">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><strong>Reference distribution</strong>: training set (48,706 encounters). <strong>Alert thresholds</strong>: Mean PSI &gt; 0.20 or KS statistic &gt; 0.10.</p>
+<hr>
+</section>
+<section id="auc-roc-and-flag-rate-over-time" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="auc-roc-and-flag-rate-over-time"><span class="header-section-number">5.3</span> AUC-ROC and Flag Rate Over Time</h2>
+<div id="cell-auc-flagrate-plot" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="fl">5.5</span>, <span class="fl">8.5</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>quarters <span class="op">=</span> [<span class="ss">f"P</span><span class="sc">{</span>r[<span class="st">'batch'</span>]<span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>aucs      <span class="op">=</span> [r[<span class="st">"auc_roc"</span>]   <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>flagrates <span class="op">=</span> [r[<span class="st">"flag_rate"</span>] <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>posrates  <span class="op">=</span> [r[<span class="st">"pos_rate"</span>]  <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># AUC-ROC</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>ax1.plot(quarters, aucs, marker<span class="op">=</span><span class="st">"o"</span>, color<span class="op">=</span><span class="st">"#2196F3"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, markersize<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"Holdout batch"</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>ax1.axhline(<span class="fl">0.6866</span>, color<span class="op">=</span><span class="st">"#9E9E9E"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"Validation AUC"</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"AUC-ROC by Period (~6 mo)"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">"AUC-ROC"</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>ax1.set_ylim(<span class="fl">0.60</span>, <span class="fl">0.75</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>ax1.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>ax1.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (q, v) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(quarters, aucs)):</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    ax1.annotate(<span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.3f}</span><span class="ss">"</span>, (q, v), textcoords<span class="op">=</span><span class="st">"offset points"</span>,</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>                 xytext<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">8</span>), ha<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Flag rate and positive rate</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>ax2.plot(quarters, flagrates, marker<span class="op">=</span><span class="st">"s"</span>, color<span class="op">=</span><span class="st">"#FF5722"</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"Flag rate"</span>)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>ax2.plot(quarters, posrates,  marker<span class="op">=</span><span class="st">"^"</span>, color<span class="op">=</span><span class="st">"#4CAF50"</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"Positive rate"</span>)</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>ax2.axhline(TAU <span class="op">*</span> <span class="fl">0.9</span> <span class="op">+</span> <span class="fl">0.02</span> <span class="op">*</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, color<span class="op">=</span><span class="st">"white"</span>)   <span class="co"># padding</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>ax2.axhline(<span class="fl">0.157</span>, color<span class="op">=</span><span class="st">"#9E9E9E"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>,</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>            label<span class="op">=</span><span class="ss">f"Part 1 target (15.7%)"</span>)</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="st">"Flag Rate vs Positive Rate"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">"Rate"</span>)</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>ax2.set_ylim(<span class="dv">0</span>, <span class="fl">0.25</span>)</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>ax2.yaxis.set_major_formatter(mticker.PercentFormatter(xmax<span class="op">=</span><span class="dv">1</span>))</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>ax2.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>ax2.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="auc-flagrate-plot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="02_drift_monitoring_files/figure-html/auc-flagrate-plot-output-1.png" width="518" height="806" class="figure-img"></p>
+<figcaption>AUC-ROC and flag rate across temporal batches. Dashed lines show the validation reference.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="ks-statistic-score-distribution-drift" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="ks-statistic-score-distribution-drift"><span class="header-section-number">5.4</span> KS Statistic — Score Distribution Drift</h2>
+<p>The KS statistic measures whether the predicted probability distribution in each batch has shifted relative to the training reference.</p>
+<div id="cell-ks-plot" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Recompute score distributions locally for the CDF plot</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>DATA_DIR <span class="op">=</span> repo_root <span class="op">/</span> <span class="st">"ml"</span> <span class="op">/</span> <span class="st">"data"</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>TARGET   <span class="op">=</span> <span class="st">"readmitted_30day"</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>model        <span class="op">=</span> joblib.load(DATA_DIR <span class="op">/</span> <span class="st">"xgb_model.joblib"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>preprocessor <span class="op">=</span> joblib.load(DATA_DIR <span class="op">/</span> <span class="st">"preprocessor.joblib"</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _sanitize(name):</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> name.replace(<span class="st">"["</span>, <span class="st">"("</span>).replace(<span class="st">"]"</span>, <span class="st">")"</span>).replace(<span class="st">"&lt;"</span>, <span class="st">"lt"</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>_DROP <span class="op">=</span> {</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"encounter_id"</span>, <span class="st">"patient_nbr"</span>, <span class="st">"readmitted_raw"</span>, <span class="st">"readmitted_any"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"split_group"</span>, <span class="st">"admission_type_id"</span>, <span class="st">"discharge_disposition_id"</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"admission_source_id"</span>, <span class="st">"readmitted_30day"</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"glimepiride_pioglitazone"</span>, <span class="st">"metformin_pioglitazone"</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"metformin_rosiglitazone"</span>, <span class="st">"glipizide_metformin"</span>, <span class="st">"tolbutamide"</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"miglitol"</span>, <span class="st">"tolazamide"</span>, <span class="st">"chlorpropamide"</span>, <span class="st">"acarbose"</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"glyburide_metformin"</span>, <span class="st">"nateglinide"</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _predict_raw(df_raw):</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> df_raw.drop(columns<span class="op">=</span>[c <span class="cf">for</span> c <span class="kw">in</span> _DROP <span class="cf">if</span> c <span class="kw">in</span> df_raw.columns])</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    X_arr  <span class="op">=</span> preprocessor.transform(X)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    names  <span class="op">=</span> [_sanitize(c) <span class="cf">for</span> c <span class="kw">in</span> preprocessor.get_feature_names_out()]</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    X_df   <span class="op">=</span> pd.DataFrame(X_arr, columns<span class="op">=</span>names)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> model.predict_proba(X_df)[:, <span class="dv">1</span>]</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>raw     <span class="op">=</span> pd.read_parquet(DATA_DIR <span class="op">/</span> <span class="st">"raw_features.parquet"</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>train_r <span class="op">=</span> raw[raw[<span class="st">"split_group"</span>] <span class="op">==</span> <span class="st">"train"</span>]</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>holdout <span class="op">=</span> raw[raw[<span class="st">"split_group"</span>] <span class="op">==</span> <span class="st">"holdout"</span>].reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>batch_size <span class="op">=</span> <span class="bu">len</span>(holdout) <span class="op">//</span> N_BATCHES</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>batches <span class="op">=</span> [</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    holdout.iloc[i <span class="op">*</span> batch_size : (i <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> batch_size <span class="cf">if</span> i <span class="op">&lt;</span> N_BATCHES <span class="op">-</span> <span class="dv">1</span> <span class="cf">else</span> <span class="bu">len</span>(holdout)]</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(N_BATCHES)</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>train_probs  <span class="op">=</span> _predict_raw(train_r)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>batch_probs  <span class="op">=</span> [_predict_raw(b) <span class="cf">for</span> b <span class="kw">in</span> batches]</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>ks_stats     <span class="op">=</span> [stats.ks_2samp(train_probs, bp).statistic <span class="cf">for</span> bp <span class="kw">in</span> batch_probs]</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="fl">5.5</span>, <span class="fl">7.5</span>))</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="co"># KS bar chart</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"#F44336"</span> <span class="cf">if</span> v <span class="op">&gt;</span> <span class="fl">0.10</span> <span class="cf">else</span> <span class="st">"#2196F3"</span> <span class="cf">for</span> v <span class="kw">in</span> ks_stats]</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>ax1.bar(quarters, ks_stats, color<span class="op">=</span>colors, alpha<span class="op">=</span><span class="fl">0.85</span>, edgecolor<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>ax1.axhline(<span class="fl">0.10</span>, color<span class="op">=</span><span class="st">"#F44336"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.5</span>,</span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>            label<span class="op">=</span><span class="st">"Alert threshold (0.10)"</span>)</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"KS Statistic vs Training"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">"KS Statistic"</span>)</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>ax1.set_ylim(<span class="dv">0</span>, <span class="fl">0.15</span>)</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>ax1.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>ax1.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> q, v <span class="kw">in</span> <span class="bu">zip</span>(quarters, ks_stats):</span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>    ax1.text(q, v <span class="op">+</span> <span class="fl">0.001</span>, <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span>, ha<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="co"># CDF overlay</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>prob_range <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">500</span>)</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>train_cdf  <span class="op">=</span> np.array([(train_probs <span class="op">&lt;=</span> p).mean() <span class="cf">for</span> p <span class="kw">in</span> prob_range])</span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>ax2.plot(prob_range, train_cdf, color<span class="op">=</span><span class="st">"black"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"Train"</span>, zorder<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>palette <span class="op">=</span> [<span class="st">"#2196F3"</span>, <span class="st">"#4CAF50"</span>, <span class="st">"#FF9800"</span>, <span class="st">"#9C27B0"</span>]</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j, (bp, q) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(batch_probs, quarters)):</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>    cdf <span class="op">=</span> np.array([(bp <span class="op">&lt;=</span> p).mean() <span class="cf">for</span> p <span class="kw">in</span> prob_range])</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>    ax2.plot(prob_range, cdf, color<span class="op">=</span>palette[j], linewidth<span class="op">=</span><span class="fl">1.5</span>,</span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>             linestyle<span class="op">=</span><span class="st">"--"</span>, alpha<span class="op">=</span><span class="fl">0.9</span>, label<span class="op">=</span>q)</span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>ax2.axvline(TAU, color<span class="op">=</span><span class="st">"#F44336"</span>, linestyle<span class="op">=</span><span class="st">":"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="ss">f"τ=</span><span class="sc">{</span>TAU<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="st">"Score CDF: Training vs Batches"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>ax2.set_xlabel(<span class="st">"Predicted Probability"</span>)</span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">"Cumulative Proportion"</span>)</span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>ax2.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>ax2.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="ks-plot" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="02_drift_monitoring_files/figure-html/ks-plot-output-1.png" width="518" height="710" class="figure-img"></p>
+<figcaption>KS statistic per batch (vs.&nbsp;training). Dashed line = alert threshold (0.10).</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="psi-input-feature-drift" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="psi-input-feature-drift"><span class="header-section-number">5.5</span> PSI — Input Feature Drift</h2>
+<p>PSI is computed on key input features (top SHAP contributors) against the training distribution. PSI &lt; 0.10 indicates no significant shift; 0.10–0.20 moderate; &gt; 0.20 triggers an alert.</p>
+<p>The shift in <code>number_diagnoses</code> between 1999-2005 (training) and 2007-2008 (holdout) is clinically plausible and historically documented. This period saw significant expansion of ICD-9 coding practices in US hospitals — hospitals increasingly coded more diagnoses per encounter driven by reimbursement incentives under DRG-based payment systems. The observed distributional shift likely reflects coding practice evolution rather than genuine changes in patient comorbidity burden. The coding practice drift in <code>number_diagnoses</code> may continue or accelerate beyond the 2008 cutoff of this dataset. In a real deployment this would warrant a retraining trigger note — not because current performance is degraded, but because the feature distribution is on a trajectory that could eventually matter if <code>number_diagnoses</code> weight increases with new data.</p>
+<p>The decoupling of feature-level drift (<code>number_diagnoses</code> PSI=0.318) from prediction-level stability (flag rate and AUC within normal range across all batches) demonstrates that the model’s predictive signal is concentrated in stable, high-weight features. This is a desirable property for production deployment.</p>
+<p>However, perhaps PSI alerts should be weighted by feature importance. A feature with SHAP rank #5 triggering a monitoring alert while features ranked #1-4 are stable is a low-priority signal. The monitoring framework should distinguish between drift in consequential features vs drift in peripheral features.</p>
+<div id="cell-psi-heatmap" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>psi_rows <span class="op">=</span> []</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> drift_results:</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    row <span class="op">=</span> {<span class="st">"Batch"</span>: <span class="ss">f"P</span><span class="sc">{</span>r[<span class="st">'batch'</span>]<span class="sc">}</span><span class="ss">"</span>}</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    row.update(r[<span class="st">"psi_by_feature"</span>])</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    psi_rows.append(row)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>df_psi <span class="op">=</span> pd.DataFrame(psi_rows).set_index(<span class="st">"Batch"</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">4</span>),</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                         gridspec_kw<span class="op">=</span>{<span class="st">"width_ratios"</span>: [<span class="dv">1</span>, <span class="fl">1.5</span>]})</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Heatmap</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.colors <span class="im">as</span> mcolors</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>norm  <span class="op">=</span> mcolors.Normalize(vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.25</span>)</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>cmap  <span class="op">=</span> plt.get_cmap(<span class="st">"YlOrRd"</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>im    <span class="op">=</span> axes[<span class="dv">0</span>].imshow(df_psi.values, aspect<span class="op">=</span><span class="st">"auto"</span>, cmap<span class="op">=</span>cmap, norm<span class="op">=</span>norm)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xticks(<span class="bu">range</span>(<span class="bu">len</span>(df_psi.columns)))</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xticklabels(df_psi.columns, rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">"right"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_yticks(<span class="bu">range</span>(<span class="bu">len</span>(df_psi.index)))</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_yticklabels(df_psi.index)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"PSI by Feature &amp; Period"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ri <span class="kw">in</span> <span class="bu">range</span>(df_psi.shape[<span class="dv">0</span>]):</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ci <span class="kw">in</span> <span class="bu">range</span>(df_psi.shape[<span class="dv">1</span>]):</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>        v <span class="op">=</span> df_psi.values[ri, ci]</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>        axes[<span class="dv">0</span>].text(ci, ri, <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.3f}</span><span class="ss">"</span>, ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"center"</span>,</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>                     fontsize<span class="op">=</span><span class="fl">7.5</span>, color<span class="op">=</span><span class="st">"black"</span> <span class="cf">if</span> v <span class="op">&lt;</span> <span class="fl">0.15</span> <span class="cf">else</span> <span class="st">"white"</span>)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>axes[<span class="dv">0</span>], label<span class="op">=</span><span class="st">"PSI"</span>)</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean PSI line</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>mean_psi <span class="op">=</span> df_drift[<span class="st">"mean_psi"</span>].values</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot(quarters, mean_psi, marker<span class="op">=</span><span class="st">"o"</span>, color<span class="op">=</span><span class="st">"#FF5722"</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>             markersize<span class="op">=</span><span class="dv">8</span>, label<span class="op">=</span><span class="st">"Mean PSI"</span>)</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].fill_between(quarters, mean_psi, alpha<span class="op">=</span><span class="fl">0.15</span>, color<span class="op">=</span><span class="st">"#FF5722"</span>)</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axhline(<span class="fl">0.10</span>, color<span class="op">=</span><span class="st">"#FF9800"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>,</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>                label<span class="op">=</span><span class="st">"Moderate threshold (0.10)"</span>)</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axhline(<span class="fl">0.20</span>, color<span class="op">=</span><span class="st">"#F44336"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.5</span>,</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>                label<span class="op">=</span><span class="st">"Alert threshold (0.20)"</span>)</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Mean PSI Over Time"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylabel(<span class="st">"Mean PSI"</span>)</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="dv">0</span>, <span class="fl">0.30</span>)</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> q, v <span class="kw">in</span> <span class="bu">zip</span>(quarters, mean_psi):</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">1</span>].annotate(<span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span>, (q, v), textcoords<span class="op">=</span><span class="st">"offset points"</span>,</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>                     xytext<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">8</span>), ha<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div id="psi-heatmap" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="02_drift_monitoring_files/figure-html/psi-heatmap-output-1.png" width="1043" height="374" class="figure-img"></p>
+<figcaption>PSI per feature and batch. Red = moderate drift (0.10–0.20). Orange dashed = alert threshold (0.20).</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="interpretation" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="interpretation"><span class="header-section-number">5.6</span> Interpretation</h2>
+<div id="drift-narrative" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-stdout">
+<pre><code>Batches evaluated : 4  (τ = 0.12)
+Drift alerts      : 0 / 4
+Max KS statistic  : 0.0515  (threshold 0.10)
+Max mean PSI      : 0.0626  (threshold 0.20)
+AUC-ROC P1 → P4  : 0.6985 → 0.6712  (Δ +0.0273)</code></pre>
+</div>
+</div>
+<p><strong>No drift alerts triggered</strong> across all four simulated semi-annual periods. Key findings:</p>
+<ul>
+<li><p><strong>Score distribution (KS)</strong>: All batches remain well below the 0.10 alert threshold. KS statistics trend slightly upward from P1 to P3 before stabilising in P4, reflecting the expected score distribution shift as holdout encounters are temporally later than the training period.</p></li>
+<li><p><strong>Input features (PSI)</strong>: Mean PSI ranges 0.04–0.06 across periods — firmly in the “no significant change” range (&lt; 0.10). The gradual increase from P1 to P4 is consistent with the temporal split: later encounters naturally diverge slightly from the 1999–2004 training distribution.</p></li>
+<li><p><strong>AUC-ROC</strong>: P1 achieves the highest discrimination (0.699), declining modestly through P2–P3 before partially recovering in P4. All values remain within ±0.04 of the validation reference (0.687), indicating that predictive performance is stable across the deployment window.</p></li>
+<li><p><strong>Flag rate</strong>: Ranges 13.9%–15.0% across periods, closely tracking the Part 1 design target of 15.7%. The slight upward trend in P4 is matched by a higher positive rate (6.8% vs ~5% in P1–P3), suggesting the model self-corrects to the elevated event frequency rather than blindly over-flagging.</p></li>
+</ul>
+<p><strong>Production recommendation</strong>: No retraining indicated based on these simulated semi-annual batches. Monitoring cadence should be maintained; an alert would be triggered if KS &gt; 0.10 or mean PSI &gt; 0.20 in any future scoring window.</p>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../part2/01_model_eval.html" class="pagination-link" aria-label="Model Evaluation">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">Model Evaluation</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Deployment Drift Monitoring"</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> venv_ml</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co">    toc-depth: 3</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">    code-fold: true</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co">    code-tools: true</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>This chapter evaluates model stability across simulated production traffic. The</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>holdout set (13,917 encounters) is divided into four temporal batches representing</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>semi-annual scoring periods (~6 months each, covering approximately 2007–2008),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>fed through the deployed model in encounter order.</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>All metrics use the **training set as the reference distribution** — the same</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>baseline the model was built on.</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="fu">## Setup</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: setup</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co">#| include: false</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pathlib</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.ticker <span class="im">as</span> mticker</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> joblib</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> roc_auc_score</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>warnings.filterwarnings(<span class="st">"ignore"</span>)</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>_here <span class="op">=</span> pathlib.Path(<span class="va">__file__</span>).resolve().parent <span class="cf">if</span> <span class="st">"__file__"</span> <span class="kw">in</span> <span class="bu">dir</span>() <span class="cf">else</span> pathlib.Path().resolve()</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>repo_root <span class="op">=</span> <span class="bu">next</span>(p <span class="cf">for</span> p <span class="kw">in</span> [_here, <span class="op">*</span>_here.parents] <span class="cf">if</span> (p <span class="op">/</span> <span class="st">".git"</span>).exists() <span class="kw">and</span> (p <span class="op">/</span> <span class="st">"ml"</span> <span class="op">/</span> <span class="st">"data"</span>).exists())</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Load pre-computed drift report (generated by monitoring/drift.py)</span></span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>DRIFT_PATH <span class="op">=</span> repo_root <span class="op">/</span> <span class="st">"monitoring"</span> <span class="op">/</span> <span class="st">"drift_report.json"</span></span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>drift_results <span class="op">=</span> json.loads(DRIFT_PATH.read_text())</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>df_drift <span class="op">=</span> pd.DataFrame(drift_results)</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>TAU <span class="op">=</span> <span class="fl">0.12</span></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>N_BATCHES <span class="op">=</span> <span class="bu">len</span>(df_drift)</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a><span class="fu">## Batch Summary</span></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>The holdout set is ordered by encounter index (reflecting the temporal encounter_id</span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>sort from the Snowflake mart) and divided into four equal-sized semi-annual batches</span>
+<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a>(~3,479 encounters each, representing ~6-month windows across 2007–2008).</span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: batch-summary</span></span>
+<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a>summary <span class="op">=</span> df_drift[[</span>
+<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a>    <span class="st">"batch"</span>, <span class="st">"n_rows"</span>, <span class="st">"auc_roc"</span>, <span class="st">"flag_rate"</span>, <span class="st">"pos_rate"</span>,</span>
+<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a>    <span class="st">"ks_stat"</span>, <span class="st">"ks_pval"</span>, <span class="st">"mean_psi"</span>, <span class="st">"drift_alert"</span></span>
+<span id="cb6-67"><a href="#cb6-67" aria-hidden="true" tabindex="-1"></a>]].copy()</span>
+<span id="cb6-68"><a href="#cb6-68" aria-hidden="true" tabindex="-1"></a>summary.columns <span class="op">=</span> [</span>
+<span id="cb6-69"><a href="#cb6-69" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Batch"</span>, <span class="st">"N"</span>, <span class="st">"AUC-ROC"</span>, <span class="st">"Flag Rate"</span>, <span class="st">"Pos Rate"</span>,</span>
+<span id="cb6-70"><a href="#cb6-70" aria-hidden="true" tabindex="-1"></a>    <span class="st">"KS Stat"</span>, <span class="st">"KS p-val"</span>, <span class="st">"Mean PSI"</span>, <span class="st">"Alert"</span></span>
+<span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a>summary[<span class="st">"Batch"</span>] <span class="op">=</span> summary[<span class="st">"Batch"</span>].<span class="bu">apply</span>(<span class="kw">lambda</span> x: <span class="ss">f"P</span><span class="sc">{</span>x<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-73"><a href="#cb6-73" aria-hidden="true" tabindex="-1"></a>summary[<span class="st">"Alert"</span>] <span class="op">=</span> summary[<span class="st">"Alert"</span>].<span class="bu">map</span>({<span class="va">True</span>: <span class="st">"⚠"</span>, <span class="va">False</span>: <span class="st">"✓"</span>})</span>
+<span id="cb6-74"><a href="#cb6-74" aria-hidden="true" tabindex="-1"></a>summary.set_index(<span class="st">"Batch"</span>, inplace<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-75"><a href="#cb6-75" aria-hidden="true" tabindex="-1"></a>summary.style <span class="op">\</span></span>
+<span id="cb6-76"><a href="#cb6-76" aria-hidden="true" tabindex="-1"></a>    .<span class="bu">format</span>({</span>
+<span id="cb6-77"><a href="#cb6-77" aria-hidden="true" tabindex="-1"></a>        <span class="st">"AUC-ROC"</span>:   <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb6-78"><a href="#cb6-78" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Flag Rate"</span>: <span class="st">"</span><span class="sc">{:.3f}</span><span class="st">"</span>,</span>
+<span id="cb6-79"><a href="#cb6-79" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Pos Rate"</span>:  <span class="st">"</span><span class="sc">{:.3f}</span><span class="st">"</span>,</span>
+<span id="cb6-80"><a href="#cb6-80" aria-hidden="true" tabindex="-1"></a>        <span class="st">"KS Stat"</span>:   <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb6-81"><a href="#cb6-81" aria-hidden="true" tabindex="-1"></a>        <span class="st">"KS p-val"</span>:  <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb6-82"><a href="#cb6-82" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Mean PSI"</span>:  <span class="st">"</span><span class="sc">{:.4f}</span><span class="st">"</span>,</span>
+<span id="cb6-83"><a href="#cb6-83" aria-hidden="true" tabindex="-1"></a>    }) <span class="op">\</span></span>
+<span id="cb6-84"><a href="#cb6-84" aria-hidden="true" tabindex="-1"></a>    .background_gradient(subset<span class="op">=</span>[<span class="st">"AUC-ROC"</span>], cmap<span class="op">=</span><span class="st">"RdYlGn"</span>, vmin<span class="op">=</span><span class="fl">0.6</span>, vmax<span class="op">=</span><span class="fl">0.75</span>) <span class="op">\</span></span>
+<span id="cb6-85"><a href="#cb6-85" aria-hidden="true" tabindex="-1"></a>    .background_gradient(subset<span class="op">=</span>[<span class="st">"KS Stat"</span>], cmap<span class="op">=</span><span class="st">"RdYlGn_r"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.1</span>) <span class="op">\</span></span>
+<span id="cb6-86"><a href="#cb6-86" aria-hidden="true" tabindex="-1"></a>    .background_gradient(subset<span class="op">=</span>[<span class="st">"Mean PSI"</span>], cmap<span class="op">=</span><span class="st">"RdYlGn_r"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb6-87"><a href="#cb6-87" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-88"><a href="#cb6-88" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-89"><a href="#cb6-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-90"><a href="#cb6-90" aria-hidden="true" tabindex="-1"></a>**Reference distribution**: training set (48,706 encounters).</span>
+<span id="cb6-91"><a href="#cb6-91" aria-hidden="true" tabindex="-1"></a>**Alert thresholds**: Mean PSI &gt; 0.20 or KS statistic &gt; 0.10.</span>
+<span id="cb6-92"><a href="#cb6-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-93"><a href="#cb6-93" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-94"><a href="#cb6-94" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-95"><a href="#cb6-95" aria-hidden="true" tabindex="-1"></a><span class="fu">## AUC-ROC and Flag Rate Over Time</span></span>
+<span id="cb6-96"><a href="#cb6-96" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-99"><a href="#cb6-99" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb6-100"><a href="#cb6-100" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: auc-flagrate-plot</span></span>
+<span id="cb6-101"><a href="#cb6-101" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb6-102"><a href="#cb6-102" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "AUC-ROC and flag rate across temporal batches. Dashed lines show the validation reference."</span></span>
+<span id="cb6-103"><a href="#cb6-103" aria-hidden="true" tabindex="-1"></a>fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="fl">5.5</span>, <span class="fl">8.5</span>))</span>
+<span id="cb6-104"><a href="#cb6-104" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-105"><a href="#cb6-105" aria-hidden="true" tabindex="-1"></a>quarters <span class="op">=</span> [<span class="ss">f"P</span><span class="sc">{</span>r[<span class="st">'batch'</span>]<span class="sc">}</span><span class="ss">"</span> <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb6-106"><a href="#cb6-106" aria-hidden="true" tabindex="-1"></a>aucs      <span class="op">=</span> [r[<span class="st">"auc_roc"</span>]   <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb6-107"><a href="#cb6-107" aria-hidden="true" tabindex="-1"></a>flagrates <span class="op">=</span> [r[<span class="st">"flag_rate"</span>] <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb6-108"><a href="#cb6-108" aria-hidden="true" tabindex="-1"></a>posrates  <span class="op">=</span> [r[<span class="st">"pos_rate"</span>]  <span class="cf">for</span> r <span class="kw">in</span> drift_results]</span>
+<span id="cb6-109"><a href="#cb6-109" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-110"><a href="#cb6-110" aria-hidden="true" tabindex="-1"></a><span class="co"># AUC-ROC</span></span>
+<span id="cb6-111"><a href="#cb6-111" aria-hidden="true" tabindex="-1"></a>ax1.plot(quarters, aucs, marker<span class="op">=</span><span class="st">"o"</span>, color<span class="op">=</span><span class="st">"#2196F3"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, markersize<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"Holdout batch"</span>)</span>
+<span id="cb6-112"><a href="#cb6-112" aria-hidden="true" tabindex="-1"></a>ax1.axhline(<span class="fl">0.6866</span>, color<span class="op">=</span><span class="st">"#9E9E9E"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="st">"Validation AUC"</span>)</span>
+<span id="cb6-113"><a href="#cb6-113" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"AUC-ROC by Period (~6 mo)"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb6-114"><a href="#cb6-114" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">"AUC-ROC"</span>)</span>
+<span id="cb6-115"><a href="#cb6-115" aria-hidden="true" tabindex="-1"></a>ax1.set_ylim(<span class="fl">0.60</span>, <span class="fl">0.75</span>)</span>
+<span id="cb6-116"><a href="#cb6-116" aria-hidden="true" tabindex="-1"></a>ax1.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb6-117"><a href="#cb6-117" aria-hidden="true" tabindex="-1"></a>ax1.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb6-118"><a href="#cb6-118" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i, (q, v) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(quarters, aucs)):</span>
+<span id="cb6-119"><a href="#cb6-119" aria-hidden="true" tabindex="-1"></a>    ax1.annotate(<span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.3f}</span><span class="ss">"</span>, (q, v), textcoords<span class="op">=</span><span class="st">"offset points"</span>,</span>
+<span id="cb6-120"><a href="#cb6-120" aria-hidden="true" tabindex="-1"></a>                 xytext<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">8</span>), ha<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-121"><a href="#cb6-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-122"><a href="#cb6-122" aria-hidden="true" tabindex="-1"></a><span class="co"># Flag rate and positive rate</span></span>
+<span id="cb6-123"><a href="#cb6-123" aria-hidden="true" tabindex="-1"></a>ax2.plot(quarters, flagrates, marker<span class="op">=</span><span class="st">"s"</span>, color<span class="op">=</span><span class="st">"#FF5722"</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb6-124"><a href="#cb6-124" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"Flag rate"</span>)</span>
+<span id="cb6-125"><a href="#cb6-125" aria-hidden="true" tabindex="-1"></a>ax2.plot(quarters, posrates,  marker<span class="op">=</span><span class="st">"^"</span>, color<span class="op">=</span><span class="st">"#4CAF50"</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb6-126"><a href="#cb6-126" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="dv">7</span>, label<span class="op">=</span><span class="st">"Positive rate"</span>)</span>
+<span id="cb6-127"><a href="#cb6-127" aria-hidden="true" tabindex="-1"></a>ax2.axhline(TAU <span class="op">*</span> <span class="fl">0.9</span> <span class="op">+</span> <span class="fl">0.02</span> <span class="op">*</span> <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, color<span class="op">=</span><span class="st">"white"</span>)   <span class="co"># padding</span></span>
+<span id="cb6-128"><a href="#cb6-128" aria-hidden="true" tabindex="-1"></a>ax2.axhline(<span class="fl">0.157</span>, color<span class="op">=</span><span class="st">"#9E9E9E"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>,</span>
+<span id="cb6-129"><a href="#cb6-129" aria-hidden="true" tabindex="-1"></a>            label<span class="op">=</span><span class="ss">f"Part 1 target (15.7%)"</span>)</span>
+<span id="cb6-130"><a href="#cb6-130" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="st">"Flag Rate vs Positive Rate"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb6-131"><a href="#cb6-131" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">"Rate"</span>)</span>
+<span id="cb6-132"><a href="#cb6-132" aria-hidden="true" tabindex="-1"></a>ax2.set_ylim(<span class="dv">0</span>, <span class="fl">0.25</span>)</span>
+<span id="cb6-133"><a href="#cb6-133" aria-hidden="true" tabindex="-1"></a>ax2.yaxis.set_major_formatter(mticker.PercentFormatter(xmax<span class="op">=</span><span class="dv">1</span>))</span>
+<span id="cb6-134"><a href="#cb6-134" aria-hidden="true" tabindex="-1"></a>ax2.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb6-135"><a href="#cb6-135" aria-hidden="true" tabindex="-1"></a>ax2.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb6-136"><a href="#cb6-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-137"><a href="#cb6-137" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-138"><a href="#cb6-138" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb6-139"><a href="#cb6-139" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-140"><a href="#cb6-140" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-141"><a href="#cb6-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-142"><a href="#cb6-142" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-143"><a href="#cb6-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-144"><a href="#cb6-144" aria-hidden="true" tabindex="-1"></a><span class="fu">## KS Statistic — Score Distribution Drift</span></span>
+<span id="cb6-145"><a href="#cb6-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-146"><a href="#cb6-146" aria-hidden="true" tabindex="-1"></a>The KS statistic measures whether the predicted probability distribution in each</span>
+<span id="cb6-147"><a href="#cb6-147" aria-hidden="true" tabindex="-1"></a>batch has shifted relative to the training reference.</span>
+<span id="cb6-148"><a href="#cb6-148" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-151"><a href="#cb6-151" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb6-152"><a href="#cb6-152" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: ks-plot</span></span>
+<span id="cb6-153"><a href="#cb6-153" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb6-154"><a href="#cb6-154" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "KS statistic per batch (vs. training). Dashed line = alert threshold (0.10)."</span></span>
+<span id="cb6-155"><a href="#cb6-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-156"><a href="#cb6-156" aria-hidden="true" tabindex="-1"></a><span class="co"># Recompute score distributions locally for the CDF plot</span></span>
+<span id="cb6-157"><a href="#cb6-157" aria-hidden="true" tabindex="-1"></a>DATA_DIR <span class="op">=</span> repo_root <span class="op">/</span> <span class="st">"ml"</span> <span class="op">/</span> <span class="st">"data"</span></span>
+<span id="cb6-158"><a href="#cb6-158" aria-hidden="true" tabindex="-1"></a>TARGET   <span class="op">=</span> <span class="st">"readmitted_30day"</span></span>
+<span id="cb6-159"><a href="#cb6-159" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-160"><a href="#cb6-160" aria-hidden="true" tabindex="-1"></a>model        <span class="op">=</span> joblib.load(DATA_DIR <span class="op">/</span> <span class="st">"xgb_model.joblib"</span>)</span>
+<span id="cb6-161"><a href="#cb6-161" aria-hidden="true" tabindex="-1"></a>preprocessor <span class="op">=</span> joblib.load(DATA_DIR <span class="op">/</span> <span class="st">"preprocessor.joblib"</span>)</span>
+<span id="cb6-162"><a href="#cb6-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-163"><a href="#cb6-163" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _sanitize(name):</span>
+<span id="cb6-164"><a href="#cb6-164" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> name.replace(<span class="st">"["</span>, <span class="st">"("</span>).replace(<span class="st">"]"</span>, <span class="st">")"</span>).replace(<span class="st">"&lt;"</span>, <span class="st">"lt"</span>)</span>
+<span id="cb6-165"><a href="#cb6-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-166"><a href="#cb6-166" aria-hidden="true" tabindex="-1"></a>_DROP <span class="op">=</span> {</span>
+<span id="cb6-167"><a href="#cb6-167" aria-hidden="true" tabindex="-1"></a>    <span class="st">"encounter_id"</span>, <span class="st">"patient_nbr"</span>, <span class="st">"readmitted_raw"</span>, <span class="st">"readmitted_any"</span>,</span>
+<span id="cb6-168"><a href="#cb6-168" aria-hidden="true" tabindex="-1"></a>    <span class="st">"split_group"</span>, <span class="st">"admission_type_id"</span>, <span class="st">"discharge_disposition_id"</span>,</span>
+<span id="cb6-169"><a href="#cb6-169" aria-hidden="true" tabindex="-1"></a>    <span class="st">"admission_source_id"</span>, <span class="st">"readmitted_30day"</span>,</span>
+<span id="cb6-170"><a href="#cb6-170" aria-hidden="true" tabindex="-1"></a>    <span class="st">"glimepiride_pioglitazone"</span>, <span class="st">"metformin_pioglitazone"</span>,</span>
+<span id="cb6-171"><a href="#cb6-171" aria-hidden="true" tabindex="-1"></a>    <span class="st">"metformin_rosiglitazone"</span>, <span class="st">"glipizide_metformin"</span>, <span class="st">"tolbutamide"</span>,</span>
+<span id="cb6-172"><a href="#cb6-172" aria-hidden="true" tabindex="-1"></a>    <span class="st">"miglitol"</span>, <span class="st">"tolazamide"</span>, <span class="st">"chlorpropamide"</span>, <span class="st">"acarbose"</span>,</span>
+<span id="cb6-173"><a href="#cb6-173" aria-hidden="true" tabindex="-1"></a>    <span class="st">"glyburide_metformin"</span>, <span class="st">"nateglinide"</span>,</span>
+<span id="cb6-174"><a href="#cb6-174" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-175"><a href="#cb6-175" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-176"><a href="#cb6-176" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> _predict_raw(df_raw):</span>
+<span id="cb6-177"><a href="#cb6-177" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> df_raw.drop(columns<span class="op">=</span>[c <span class="cf">for</span> c <span class="kw">in</span> _DROP <span class="cf">if</span> c <span class="kw">in</span> df_raw.columns])</span>
+<span id="cb6-178"><a href="#cb6-178" aria-hidden="true" tabindex="-1"></a>    X_arr  <span class="op">=</span> preprocessor.transform(X)</span>
+<span id="cb6-179"><a href="#cb6-179" aria-hidden="true" tabindex="-1"></a>    names  <span class="op">=</span> [_sanitize(c) <span class="cf">for</span> c <span class="kw">in</span> preprocessor.get_feature_names_out()]</span>
+<span id="cb6-180"><a href="#cb6-180" aria-hidden="true" tabindex="-1"></a>    X_df   <span class="op">=</span> pd.DataFrame(X_arr, columns<span class="op">=</span>names)</span>
+<span id="cb6-181"><a href="#cb6-181" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> model.predict_proba(X_df)[:, <span class="dv">1</span>]</span>
+<span id="cb6-182"><a href="#cb6-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-183"><a href="#cb6-183" aria-hidden="true" tabindex="-1"></a>raw     <span class="op">=</span> pd.read_parquet(DATA_DIR <span class="op">/</span> <span class="st">"raw_features.parquet"</span>)</span>
+<span id="cb6-184"><a href="#cb6-184" aria-hidden="true" tabindex="-1"></a>train_r <span class="op">=</span> raw[raw[<span class="st">"split_group"</span>] <span class="op">==</span> <span class="st">"train"</span>]</span>
+<span id="cb6-185"><a href="#cb6-185" aria-hidden="true" tabindex="-1"></a>holdout <span class="op">=</span> raw[raw[<span class="st">"split_group"</span>] <span class="op">==</span> <span class="st">"holdout"</span>].reset_index(drop<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-186"><a href="#cb6-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-187"><a href="#cb6-187" aria-hidden="true" tabindex="-1"></a>batch_size <span class="op">=</span> <span class="bu">len</span>(holdout) <span class="op">//</span> N_BATCHES</span>
+<span id="cb6-188"><a href="#cb6-188" aria-hidden="true" tabindex="-1"></a>batches <span class="op">=</span> [</span>
+<span id="cb6-189"><a href="#cb6-189" aria-hidden="true" tabindex="-1"></a>    holdout.iloc[i <span class="op">*</span> batch_size : (i <span class="op">+</span> <span class="dv">1</span>) <span class="op">*</span> batch_size <span class="cf">if</span> i <span class="op">&lt;</span> N_BATCHES <span class="op">-</span> <span class="dv">1</span> <span class="cf">else</span> <span class="bu">len</span>(holdout)]</span>
+<span id="cb6-190"><a href="#cb6-190" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(N_BATCHES)</span>
+<span id="cb6-191"><a href="#cb6-191" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb6-192"><a href="#cb6-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-193"><a href="#cb6-193" aria-hidden="true" tabindex="-1"></a>train_probs  <span class="op">=</span> _predict_raw(train_r)</span>
+<span id="cb6-194"><a href="#cb6-194" aria-hidden="true" tabindex="-1"></a>batch_probs  <span class="op">=</span> [_predict_raw(b) <span class="cf">for</span> b <span class="kw">in</span> batches]</span>
+<span id="cb6-195"><a href="#cb6-195" aria-hidden="true" tabindex="-1"></a>ks_stats     <span class="op">=</span> [stats.ks_2samp(train_probs, bp).statistic <span class="cf">for</span> bp <span class="kw">in</span> batch_probs]</span>
+<span id="cb6-196"><a href="#cb6-196" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-197"><a href="#cb6-197" aria-hidden="true" tabindex="-1"></a>fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">1</span>, figsize<span class="op">=</span>(<span class="fl">5.5</span>, <span class="fl">7.5</span>))</span>
+<span id="cb6-198"><a href="#cb6-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-199"><a href="#cb6-199" aria-hidden="true" tabindex="-1"></a><span class="co"># KS bar chart</span></span>
+<span id="cb6-200"><a href="#cb6-200" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">"#F44336"</span> <span class="cf">if</span> v <span class="op">&gt;</span> <span class="fl">0.10</span> <span class="cf">else</span> <span class="st">"#2196F3"</span> <span class="cf">for</span> v <span class="kw">in</span> ks_stats]</span>
+<span id="cb6-201"><a href="#cb6-201" aria-hidden="true" tabindex="-1"></a>ax1.bar(quarters, ks_stats, color<span class="op">=</span>colors, alpha<span class="op">=</span><span class="fl">0.85</span>, edgecolor<span class="op">=</span><span class="st">"white"</span>)</span>
+<span id="cb6-202"><a href="#cb6-202" aria-hidden="true" tabindex="-1"></a>ax1.axhline(<span class="fl">0.10</span>, color<span class="op">=</span><span class="st">"#F44336"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.5</span>,</span>
+<span id="cb6-203"><a href="#cb6-203" aria-hidden="true" tabindex="-1"></a>            label<span class="op">=</span><span class="st">"Alert threshold (0.10)"</span>)</span>
+<span id="cb6-204"><a href="#cb6-204" aria-hidden="true" tabindex="-1"></a>ax1.set_title(<span class="st">"KS Statistic vs Training"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb6-205"><a href="#cb6-205" aria-hidden="true" tabindex="-1"></a>ax1.set_ylabel(<span class="st">"KS Statistic"</span>)</span>
+<span id="cb6-206"><a href="#cb6-206" aria-hidden="true" tabindex="-1"></a>ax1.set_ylim(<span class="dv">0</span>, <span class="fl">0.15</span>)</span>
+<span id="cb6-207"><a href="#cb6-207" aria-hidden="true" tabindex="-1"></a>ax1.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb6-208"><a href="#cb6-208" aria-hidden="true" tabindex="-1"></a>ax1.grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb6-209"><a href="#cb6-209" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> q, v <span class="kw">in</span> <span class="bu">zip</span>(quarters, ks_stats):</span>
+<span id="cb6-210"><a href="#cb6-210" aria-hidden="true" tabindex="-1"></a>    ax1.text(q, v <span class="op">+</span> <span class="fl">0.001</span>, <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span>, ha<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-211"><a href="#cb6-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-212"><a href="#cb6-212" aria-hidden="true" tabindex="-1"></a><span class="co"># CDF overlay</span></span>
+<span id="cb6-213"><a href="#cb6-213" aria-hidden="true" tabindex="-1"></a>prob_range <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">500</span>)</span>
+<span id="cb6-214"><a href="#cb6-214" aria-hidden="true" tabindex="-1"></a>train_cdf  <span class="op">=</span> np.array([(train_probs <span class="op">&lt;=</span> p).mean() <span class="cf">for</span> p <span class="kw">in</span> prob_range])</span>
+<span id="cb6-215"><a href="#cb6-215" aria-hidden="true" tabindex="-1"></a>ax2.plot(prob_range, train_cdf, color<span class="op">=</span><span class="st">"black"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"Train"</span>, zorder<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb6-216"><a href="#cb6-216" aria-hidden="true" tabindex="-1"></a>palette <span class="op">=</span> [<span class="st">"#2196F3"</span>, <span class="st">"#4CAF50"</span>, <span class="st">"#FF9800"</span>, <span class="st">"#9C27B0"</span>]</span>
+<span id="cb6-217"><a href="#cb6-217" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> j, (bp, q) <span class="kw">in</span> <span class="bu">enumerate</span>(<span class="bu">zip</span>(batch_probs, quarters)):</span>
+<span id="cb6-218"><a href="#cb6-218" aria-hidden="true" tabindex="-1"></a>    cdf <span class="op">=</span> np.array([(bp <span class="op">&lt;=</span> p).mean() <span class="cf">for</span> p <span class="kw">in</span> prob_range])</span>
+<span id="cb6-219"><a href="#cb6-219" aria-hidden="true" tabindex="-1"></a>    ax2.plot(prob_range, cdf, color<span class="op">=</span>palette[j], linewidth<span class="op">=</span><span class="fl">1.5</span>,</span>
+<span id="cb6-220"><a href="#cb6-220" aria-hidden="true" tabindex="-1"></a>             linestyle<span class="op">=</span><span class="st">"--"</span>, alpha<span class="op">=</span><span class="fl">0.9</span>, label<span class="op">=</span>q)</span>
+<span id="cb6-221"><a href="#cb6-221" aria-hidden="true" tabindex="-1"></a>ax2.axvline(TAU, color<span class="op">=</span><span class="st">"#F44336"</span>, linestyle<span class="op">=</span><span class="st">":"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>, label<span class="op">=</span><span class="ss">f"τ=</span><span class="sc">{</span>TAU<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-222"><a href="#cb6-222" aria-hidden="true" tabindex="-1"></a>ax2.set_title(<span class="st">"Score CDF: Training vs Batches"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb6-223"><a href="#cb6-223" aria-hidden="true" tabindex="-1"></a>ax2.set_xlabel(<span class="st">"Predicted Probability"</span>)</span>
+<span id="cb6-224"><a href="#cb6-224" aria-hidden="true" tabindex="-1"></a>ax2.set_ylabel(<span class="st">"Cumulative Proportion"</span>)</span>
+<span id="cb6-225"><a href="#cb6-225" aria-hidden="true" tabindex="-1"></a>ax2.legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb6-226"><a href="#cb6-226" aria-hidden="true" tabindex="-1"></a>ax2.grid(alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb6-227"><a href="#cb6-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-228"><a href="#cb6-228" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-229"><a href="#cb6-229" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb6-230"><a href="#cb6-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-231"><a href="#cb6-231" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-232"><a href="#cb6-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-233"><a href="#cb6-233" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-234"><a href="#cb6-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-235"><a href="#cb6-235" aria-hidden="true" tabindex="-1"></a><span class="fu">## PSI — Input Feature Drift</span></span>
+<span id="cb6-236"><a href="#cb6-236" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-237"><a href="#cb6-237" aria-hidden="true" tabindex="-1"></a>PSI is computed on key input features (top SHAP contributors) against the</span>
+<span id="cb6-238"><a href="#cb6-238" aria-hidden="true" tabindex="-1"></a>training distribution. PSI &lt; 0.10 indicates no significant shift; 0.10–0.20</span>
+<span id="cb6-239"><a href="#cb6-239" aria-hidden="true" tabindex="-1"></a>moderate; &gt; 0.20 triggers an alert.</span>
+<span id="cb6-240"><a href="#cb6-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-241"><a href="#cb6-241" aria-hidden="true" tabindex="-1"></a>The shift in <span class="in">`number_diagnoses`</span> between 1999-2005 (training) and 2007-2008 (holdout) is clinically plausible and historically documented. This period saw significant expansion of ICD-9 coding practices in US hospitals — hospitals increasingly coded more diagnoses per encounter driven by reimbursement incentives under DRG-based payment systems. The observed distributional shift likely reflects coding practice evolution rather than genuine changes in patient comorbidity burden. The coding practice drift in <span class="in">`number_diagnoses`</span> may continue or accelerate beyond the 2008 cutoff of this dataset. In a real deployment this would warrant a retraining trigger note — not because current performance is degraded, but because the feature distribution is on a trajectory that could eventually matter if <span class="in">`number_diagnoses`</span> weight increases with new data.</span>
+<span id="cb6-242"><a href="#cb6-242" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-243"><a href="#cb6-243" aria-hidden="true" tabindex="-1"></a>The decoupling of feature-level drift (<span class="in">`number_diagnoses`</span> PSI=0.318) from prediction-level stability (flag rate and AUC within normal range across all batches) demonstrates that the model's predictive signal is concentrated in stable, high-weight features. This is a desirable property for production deployment.</span>
+<span id="cb6-244"><a href="#cb6-244" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-245"><a href="#cb6-245" aria-hidden="true" tabindex="-1"></a>However, perhaps PSI alerts should be weighted by feature importance. A feature with SHAP rank #5 triggering a monitoring alert while features ranked #1-4 are stable is a low-priority signal. The monitoring framework should distinguish between drift in consequential features vs drift in peripheral features.</span>
+<span id="cb6-246"><a href="#cb6-246" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-247"><a href="#cb6-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-248"><a href="#cb6-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-251"><a href="#cb6-251" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb6-252"><a href="#cb6-252" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: psi-heatmap</span></span>
+<span id="cb6-253"><a href="#cb6-253" aria-hidden="true" tabindex="-1"></a><span class="co">#| code-fold: true</span></span>
+<span id="cb6-254"><a href="#cb6-254" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "PSI per feature and batch. Red = moderate drift (0.10–0.20). Orange dashed = alert threshold (0.20)."</span></span>
+<span id="cb6-255"><a href="#cb6-255" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-256"><a href="#cb6-256" aria-hidden="true" tabindex="-1"></a>psi_rows <span class="op">=</span> []</span>
+<span id="cb6-257"><a href="#cb6-257" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> drift_results:</span>
+<span id="cb6-258"><a href="#cb6-258" aria-hidden="true" tabindex="-1"></a>    row <span class="op">=</span> {<span class="st">"Batch"</span>: <span class="ss">f"P</span><span class="sc">{</span>r[<span class="st">'batch'</span>]<span class="sc">}</span><span class="ss">"</span>}</span>
+<span id="cb6-259"><a href="#cb6-259" aria-hidden="true" tabindex="-1"></a>    row.update(r[<span class="st">"psi_by_feature"</span>])</span>
+<span id="cb6-260"><a href="#cb6-260" aria-hidden="true" tabindex="-1"></a>    psi_rows.append(row)</span>
+<span id="cb6-261"><a href="#cb6-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-262"><a href="#cb6-262" aria-hidden="true" tabindex="-1"></a>df_psi <span class="op">=</span> pd.DataFrame(psi_rows).set_index(<span class="st">"Batch"</span>)</span>
+<span id="cb6-263"><a href="#cb6-263" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-264"><a href="#cb6-264" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">4</span>),</span>
+<span id="cb6-265"><a href="#cb6-265" aria-hidden="true" tabindex="-1"></a>                         gridspec_kw<span class="op">=</span>{<span class="st">"width_ratios"</span>: [<span class="dv">1</span>, <span class="fl">1.5</span>]})</span>
+<span id="cb6-266"><a href="#cb6-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-267"><a href="#cb6-267" aria-hidden="true" tabindex="-1"></a><span class="co"># Heatmap</span></span>
+<span id="cb6-268"><a href="#cb6-268" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.colors <span class="im">as</span> mcolors</span>
+<span id="cb6-269"><a href="#cb6-269" aria-hidden="true" tabindex="-1"></a>norm  <span class="op">=</span> mcolors.Normalize(vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="fl">0.25</span>)</span>
+<span id="cb6-270"><a href="#cb6-270" aria-hidden="true" tabindex="-1"></a>cmap  <span class="op">=</span> plt.get_cmap(<span class="st">"YlOrRd"</span>)</span>
+<span id="cb6-271"><a href="#cb6-271" aria-hidden="true" tabindex="-1"></a>im    <span class="op">=</span> axes[<span class="dv">0</span>].imshow(df_psi.values, aspect<span class="op">=</span><span class="st">"auto"</span>, cmap<span class="op">=</span>cmap, norm<span class="op">=</span>norm)</span>
+<span id="cb6-272"><a href="#cb6-272" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xticks(<span class="bu">range</span>(<span class="bu">len</span>(df_psi.columns)))</span>
+<span id="cb6-273"><a href="#cb6-273" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xticklabels(df_psi.columns, rotation<span class="op">=</span><span class="dv">45</span>, ha<span class="op">=</span><span class="st">"right"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-274"><a href="#cb6-274" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_yticks(<span class="bu">range</span>(<span class="bu">len</span>(df_psi.index)))</span>
+<span id="cb6-275"><a href="#cb6-275" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_yticklabels(df_psi.index)</span>
+<span id="cb6-276"><a href="#cb6-276" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"PSI by Feature &amp; Period"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb6-277"><a href="#cb6-277" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ri <span class="kw">in</span> <span class="bu">range</span>(df_psi.shape[<span class="dv">0</span>]):</span>
+<span id="cb6-278"><a href="#cb6-278" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ci <span class="kw">in</span> <span class="bu">range</span>(df_psi.shape[<span class="dv">1</span>]):</span>
+<span id="cb6-279"><a href="#cb6-279" aria-hidden="true" tabindex="-1"></a>        v <span class="op">=</span> df_psi.values[ri, ci]</span>
+<span id="cb6-280"><a href="#cb6-280" aria-hidden="true" tabindex="-1"></a>        axes[<span class="dv">0</span>].text(ci, ri, <span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.3f}</span><span class="ss">"</span>, ha<span class="op">=</span><span class="st">"center"</span>, va<span class="op">=</span><span class="st">"center"</span>,</span>
+<span id="cb6-281"><a href="#cb6-281" aria-hidden="true" tabindex="-1"></a>                     fontsize<span class="op">=</span><span class="fl">7.5</span>, color<span class="op">=</span><span class="st">"black"</span> <span class="cf">if</span> v <span class="op">&lt;</span> <span class="fl">0.15</span> <span class="cf">else</span> <span class="st">"white"</span>)</span>
+<span id="cb6-282"><a href="#cb6-282" aria-hidden="true" tabindex="-1"></a>plt.colorbar(im, ax<span class="op">=</span>axes[<span class="dv">0</span>], label<span class="op">=</span><span class="st">"PSI"</span>)</span>
+<span id="cb6-283"><a href="#cb6-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-284"><a href="#cb6-284" aria-hidden="true" tabindex="-1"></a><span class="co"># Mean PSI line</span></span>
+<span id="cb6-285"><a href="#cb6-285" aria-hidden="true" tabindex="-1"></a>mean_psi <span class="op">=</span> df_drift[<span class="st">"mean_psi"</span>].values</span>
+<span id="cb6-286"><a href="#cb6-286" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot(quarters, mean_psi, marker<span class="op">=</span><span class="st">"o"</span>, color<span class="op">=</span><span class="st">"#FF5722"</span>, linewidth<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb6-287"><a href="#cb6-287" aria-hidden="true" tabindex="-1"></a>             markersize<span class="op">=</span><span class="dv">8</span>, label<span class="op">=</span><span class="st">"Mean PSI"</span>)</span>
+<span id="cb6-288"><a href="#cb6-288" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].fill_between(quarters, mean_psi, alpha<span class="op">=</span><span class="fl">0.15</span>, color<span class="op">=</span><span class="st">"#FF5722"</span>)</span>
+<span id="cb6-289"><a href="#cb6-289" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axhline(<span class="fl">0.10</span>, color<span class="op">=</span><span class="st">"#FF9800"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.2</span>,</span>
+<span id="cb6-290"><a href="#cb6-290" aria-hidden="true" tabindex="-1"></a>                label<span class="op">=</span><span class="st">"Moderate threshold (0.10)"</span>)</span>
+<span id="cb6-291"><a href="#cb6-291" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].axhline(<span class="fl">0.20</span>, color<span class="op">=</span><span class="st">"#F44336"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>, linewidth<span class="op">=</span><span class="fl">1.5</span>,</span>
+<span id="cb6-292"><a href="#cb6-292" aria-hidden="true" tabindex="-1"></a>                label<span class="op">=</span><span class="st">"Alert threshold (0.20)"</span>)</span>
+<span id="cb6-293"><a href="#cb6-293" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">"Mean PSI Over Time"</span>, fontweight<span class="op">=</span><span class="st">"bold"</span>)</span>
+<span id="cb6-294"><a href="#cb6-294" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylabel(<span class="st">"Mean PSI"</span>)</span>
+<span id="cb6-295"><a href="#cb6-295" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="dv">0</span>, <span class="fl">0.30</span>)</span>
+<span id="cb6-296"><a href="#cb6-296" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].legend(fontsize<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb6-297"><a href="#cb6-297" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].grid(axis<span class="op">=</span><span class="st">"y"</span>, alpha<span class="op">=</span><span class="fl">0.4</span>)</span>
+<span id="cb6-298"><a href="#cb6-298" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> q, v <span class="kw">in</span> <span class="bu">zip</span>(quarters, mean_psi):</span>
+<span id="cb6-299"><a href="#cb6-299" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">1</span>].annotate(<span class="ss">f"</span><span class="sc">{</span>v<span class="sc">:.4f}</span><span class="ss">"</span>, (q, v), textcoords<span class="op">=</span><span class="st">"offset points"</span>,</span>
+<span id="cb6-300"><a href="#cb6-300" aria-hidden="true" tabindex="-1"></a>                     xytext<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">8</span>), ha<span class="op">=</span><span class="st">"center"</span>, fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb6-301"><a href="#cb6-301" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-302"><a href="#cb6-302" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-303"><a href="#cb6-303" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb6-304"><a href="#cb6-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-305"><a href="#cb6-305" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-306"><a href="#cb6-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-307"><a href="#cb6-307" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb6-308"><a href="#cb6-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-309"><a href="#cb6-309" aria-hidden="true" tabindex="-1"></a><span class="fu">## Interpretation</span></span>
+<span id="cb6-310"><a href="#cb6-310" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-313"><a href="#cb6-313" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb6-314"><a href="#cb6-314" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: drift-narrative</span></span>
+<span id="cb6-315"><a href="#cb6-315" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb6-316"><a href="#cb6-316" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-317"><a href="#cb6-317" aria-hidden="true" tabindex="-1"></a>max_ks   <span class="op">=</span> df_drift[<span class="st">"ks_stat"</span>].<span class="bu">max</span>()</span>
+<span id="cb6-318"><a href="#cb6-318" aria-hidden="true" tabindex="-1"></a>max_psi  <span class="op">=</span> df_drift[<span class="st">"mean_psi"</span>].<span class="bu">max</span>()</span>
+<span id="cb6-319"><a href="#cb6-319" aria-hidden="true" tabindex="-1"></a>n_alerts <span class="op">=</span> df_drift[<span class="st">"drift_alert"</span>].<span class="bu">sum</span>()</span>
+<span id="cb6-320"><a href="#cb6-320" aria-hidden="true" tabindex="-1"></a>auc_q1   <span class="op">=</span> df_drift.loc[<span class="dv">0</span>, <span class="st">"auc_roc"</span>]</span>
+<span id="cb6-321"><a href="#cb6-321" aria-hidden="true" tabindex="-1"></a>auc_q4   <span class="op">=</span> df_drift.loc[N_BATCHES <span class="op">-</span> <span class="dv">1</span>, <span class="st">"auc_roc"</span>]</span>
+<span id="cb6-322"><a href="#cb6-322" aria-hidden="true" tabindex="-1"></a>auc_drop <span class="op">=</span> auc_q1 <span class="op">-</span> auc_q4</span>
+<span id="cb6-323"><a href="#cb6-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-324"><a href="#cb6-324" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Batches evaluated : </span><span class="sc">{</span>N_BATCHES<span class="sc">}</span><span class="ss">  (τ = </span><span class="sc">{</span>TAU<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb6-325"><a href="#cb6-325" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Drift alerts      : </span><span class="sc">{</span>n_alerts<span class="sc">}</span><span class="ss"> / </span><span class="sc">{</span>N_BATCHES<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-326"><a href="#cb6-326" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max KS statistic  : </span><span class="sc">{</span>max_ks<span class="sc">:.4f}</span><span class="ss">  (threshold 0.10)"</span>)</span>
+<span id="cb6-327"><a href="#cb6-327" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Max mean PSI      : </span><span class="sc">{</span>max_psi<span class="sc">:.4f}</span><span class="ss">  (threshold 0.20)"</span>)</span>
+<span id="cb6-328"><a href="#cb6-328" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"AUC-ROC P1 → P4  : </span><span class="sc">{</span>auc_q1<span class="sc">:.4f}</span><span class="ss"> → </span><span class="sc">{</span>auc_q4<span class="sc">:.4f}</span><span class="ss">  (Δ </span><span class="sc">{</span>auc_drop<span class="sc">:+.4f}</span><span class="ss">)"</span>)</span>
+<span id="cb6-329"><a href="#cb6-329" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-330"><a href="#cb6-330" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-331"><a href="#cb6-331" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-332"><a href="#cb6-332" aria-hidden="true" tabindex="-1"></a>**No drift alerts triggered** across all four simulated semi-annual periods. Key findings:</span>
+<span id="cb6-333"><a href="#cb6-333" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-334"><a href="#cb6-334" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Score distribution (KS)**: All batches remain well below the 0.10 alert threshold.</span>
+<span id="cb6-335"><a href="#cb6-335" aria-hidden="true" tabindex="-1"></a>  KS statistics trend slightly upward from P1 to P3 before stabilising in P4,</span>
+<span id="cb6-336"><a href="#cb6-336" aria-hidden="true" tabindex="-1"></a>  reflecting the expected score distribution shift as holdout encounters are</span>
+<span id="cb6-337"><a href="#cb6-337" aria-hidden="true" tabindex="-1"></a>  temporally later than the training period.</span>
+<span id="cb6-338"><a href="#cb6-338" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-339"><a href="#cb6-339" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Input features (PSI)**: Mean PSI ranges 0.04–0.06 across periods — firmly</span>
+<span id="cb6-340"><a href="#cb6-340" aria-hidden="true" tabindex="-1"></a>  in the "no significant change" range (&lt; 0.10). The gradual increase from P1</span>
+<span id="cb6-341"><a href="#cb6-341" aria-hidden="true" tabindex="-1"></a>  to P4 is consistent with the temporal split: later encounters naturally diverge</span>
+<span id="cb6-342"><a href="#cb6-342" aria-hidden="true" tabindex="-1"></a>  slightly from the 1999–2004 training distribution.</span>
+<span id="cb6-343"><a href="#cb6-343" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-344"><a href="#cb6-344" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**AUC-ROC**: P1 achieves the highest discrimination (0.699), declining modestly</span>
+<span id="cb6-345"><a href="#cb6-345" aria-hidden="true" tabindex="-1"></a>  through P2–P3 before partially recovering in P4. All values remain within</span>
+<span id="cb6-346"><a href="#cb6-346" aria-hidden="true" tabindex="-1"></a>  ±0.04 of the validation reference (0.687), indicating that predictive</span>
+<span id="cb6-347"><a href="#cb6-347" aria-hidden="true" tabindex="-1"></a>  performance is stable across the deployment window.</span>
+<span id="cb6-348"><a href="#cb6-348" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-349"><a href="#cb6-349" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Flag rate**: Ranges 13.9%–15.0% across periods, closely tracking the Part 1</span>
+<span id="cb6-350"><a href="#cb6-350" aria-hidden="true" tabindex="-1"></a>  design target of 15.7%. The slight upward trend in P4 is matched by a higher</span>
+<span id="cb6-351"><a href="#cb6-351" aria-hidden="true" tabindex="-1"></a>  positive rate (6.8% vs ~5% in P1–P3), suggesting the model self-corrects to</span>
+<span id="cb6-352"><a href="#cb6-352" aria-hidden="true" tabindex="-1"></a>  the elevated event frequency rather than blindly over-flagging.</span>
+<span id="cb6-353"><a href="#cb6-353" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-354"><a href="#cb6-354" aria-hidden="true" tabindex="-1"></a>**Production recommendation**: No retraining indicated based on these simulated</span>
+<span id="cb6-355"><a href="#cb6-355" aria-hidden="true" tabindex="-1"></a>semi-annual batches. Monitoring cadence should be maintained; an alert would</span>
+<span id="cb6-356"><a href="#cb6-356" aria-hidden="true" tabindex="-1"></a>be triggered if KS &gt; 0.10 or mean PSI &gt; 0.20 in any future scoring window.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
