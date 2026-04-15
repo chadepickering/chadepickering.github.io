@@ -1,9 +1,9 @@
 # macOS
 .DS_Store
+**/.DS_Store
 
 # Quarto build artifacts
 .quarto/
-*_files/
 *.quarto_ipynb
 
 # Python
