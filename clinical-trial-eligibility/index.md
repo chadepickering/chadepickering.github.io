@@ -4,9 +4,9 @@ An end-to-end clinical decision support system that combines retrieval-augmented
 
 **[Live demo](https://clinical-trial-eligibility-demo.streamlit.app/)** — 1,000 sampled oncology trials, full Bayesian scoring and semantic search. Runs in a browser with no setup.
 
-**[Pipeline walkthrough](PIPELINE_WALKTHROUGH.md)** — traces a real trial (NCT00127920) through every stage of the system end to end.
-
 **[Project plan](README_proj-plan.md)** — full implementation plan with design decisions, evaluation results, and step-by-step build log.
+
+**[Pipeline walkthrough](PIPELINE_WALKTHROUGH.md)** — traces a real trial (NCT00127920) through every stage of the system end to end.
 
 ---
 
