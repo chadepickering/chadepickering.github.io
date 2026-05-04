@@ -1,5 +1,6 @@
 ## Independent Production-Grade ML/AI Projects
 
+- [Clinical Trial Eligibility Intelligence System](clinical-trial-eligibility/): RAG + SciBERT + Bayesian eligibility matching for oncology trials. [Live demo.](https://clinical-trial-eligibility-demo.streamlit.app/)
 - [Developing and Deploying a 30-Day Hospital Readmission Prediction System for Diabetes Patients](uci-diabetes/index.html)
 
 ## InterVenn Biosciences: Peer-Reviewed Publications (Selection)
