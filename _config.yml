@@ -5,3 +5,7 @@ defaults:
       path: "clinical-trial-eligibility"
     values:
       layout: project
+  - scope:
+      path: "air-quality"
+    values:
+      layout: project

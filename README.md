@@ -1,5 +1,7 @@
 ## Independent Production-Grade ML/AI Projects
 
+- [Air Quality (PM2.5) Forecasting and Health Alert System](air-quality/): Real-time/streaming probabilistic health alerts using Kafka + PySpark + DeepAR/conformal calibration
+   - [Live demo of Streamlit app](https://airquality-forecast.streamlit.app/)
 - [Clinical Trial Eligibility Intelligence System](clinical-trial-eligibility/): RAG system + NLP & SciBERT + Bayesian eligibility matching for oncology trials
    - [Live demo of Streamlit app](https://clinical-trial-eligibility-demo.streamlit.app/)
 - [Developing and Deploying a 30-Day Hospital Readmission Prediction System for Diabetes Patients](uci-diabetes/index.html): Causal inference & experimental design + supervised model training + deployment & drift monitoring for readmission triaging & prevention
